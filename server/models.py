@@ -4,7 +4,6 @@ from datetime import datetime
 
 # Write the following tables:
 # Games:
-# -Draft Feature(Add join table for UserDraftPicks)
 # -Wins(Hold off until you finish the Draft Feature)
 # -Pick'em (user_id, year_id, 18 weeks with arrays of team_ids and points)
 # -Survivor(user_id, year_id, 18 weeks with a single team_id)
@@ -139,7 +138,6 @@ class WinPool(db.Model):
     year_id = db.Column(db.Integer, db.ForeignKey("years.id"))
     total_wins = db.Column(db.Integer)
 
-    # draft_picks = db.relationship("DraftPick", backref="win_pool", lazy="dynamic")
     user = db.relationship("User", backref="win_pool")
 
     def __repr__(self):
