@@ -4,7 +4,6 @@ from datetime import datetime
 
 # Write the following tables:
 # Games:
-# -Wins (Adjust so that there is a week table and then a reference to week in the appropriate tables)
 # -Pick'em (user_id, year_id, 18 weeks with arrays of team_ids and points)
 # -Survivor(user_id, year_id, 18 weeks with a single team_id)
 # -Predictions(user_id, year_id, and I need to think about how I want to structure this)
@@ -42,6 +41,19 @@ class Year(db.Model):
 
     def to_dict(self):
         return {"id": self.id, "year": self.year}
+
+
+class Week(db.Model):
+    __tablename__ = "weeks"
+
+    id = db.Column(db.Integer, primary_key=True)
+    week_number = db.Column(db.Integer)
+
+    def __repr__(self):
+        return f"<Week Id={self.id} Week={self.week_number}>"
+
+    def to_dict(self):
+        return {"id": self.id, "week": self.week_number}
 
 
 class Team(db.Model):
@@ -87,6 +99,20 @@ class Record(db.Model):
         }
 
 
+class DraftPick(db.Model):
+    __tablename__ = "draft_picks"
+
+    id = db.Column(db.Integer, primary_key=True)
+    win_pool_id = db.Column(db.Integer, db.ForeignKey("wins_pool.id"))
+    pick_number = db.Column(db.Integer)
+
+    def __repr__(self):
+        return f"<Draft Pick Number = {self.pick_number}>"
+
+    def to_dict(self):
+        return {"pick_number": self.pick_number}
+
+
 class WinPool(db.Model):
     __tablename__ = "wins_pool"
 
@@ -95,13 +121,19 @@ class WinPool(db.Model):
     year_id = db.Column(db.Integer, db.ForeignKey("years.id"))
     total_wins = db.Column(db.Integer)
 
-    user = db.relationship("User", backref="winPool")
+    draft_picks = db.relationship("DraftPick", backref="win_pool", lazy="dynamic")
+    user = db.relationship("User", backref="win_pool")
 
     def __repr__(self):
         return f"<User Wins User={self.user.name}, Total Wins={self.total_wins}>"
 
     def to_dict(self):
-        return {"id": self.id, "user": self.user.name, "total_wins": self.total_wins}
+        return {
+            "id": self.id,
+            "user": self.user.name,
+            "total_wins": self.total_wins,
+            "draft_picks": [draft_pick.to_dict() for draft_pick in self.draft_picks],
+        }
 
 
 class WeeklyWin(db.Model):
@@ -109,16 +141,16 @@ class WeeklyWin(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     win_pool_id = db.Column(db.Integer, db.ForeignKey("wins_pool.id"))
-    week_number = db.Column(db.Integer)
+    week_number_id = db.Column(db.Integer, db.ForeignKey("weeks.id"))
     wins = db.Column(db.Integer)
 
     def __repr__(self):
-        return f"<Wins For The Week: Week={self.week_number}, Wins={self.wins}>"
+        return f"<Wins For The Week: Week={self.week_number_id}, Wins={self.wins}>"
 
     def to_dict(self):
         return {
             "id": self.id,
             "win_pool_id": self.win_pool_id,
-            "week": self.week_number,
+            "week": self.week_number_id,
             "wins": self.wins,
         }
