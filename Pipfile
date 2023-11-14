@@ -9,6 +9,7 @@ flask-migrate = "*"
 sqlalchemy = "*"
 pytest = "*"
 mysql-connector-python = "*"
+flask-testing = "*"
 
 [dev-packages]
 

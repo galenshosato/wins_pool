@@ -1,10 +1,10 @@
-from extensions import db
+from server.extensions import db
 from datetime import datetime
 
 
 # Write the following tables:
 # Games:
-# -Draft Feature(Add join table for UserDraftPicks)
+# -Draft Feature
 # -Wins(Hold off until you finish the Draft Feature)
 # -Pick'em (user_id, year_id, 18 weeks with arrays of team_ids and points)
 # -Survivor(user_id, year_id, 18 weeks with a single team_id)
@@ -99,76 +99,71 @@ class UserDraftPick(db.Model):
     team = db.relationship("Team", backref="user_draft_picks")
 
 
-class Record(db.Model):
-    __tablename__ = "records"
+# class Record(db.Model):
+#     __tablename__ = "records"
 
-    id = db.Column(db.Integer, primary_key=True)
-    team_id = db.Column(db.Integer, db.ForeignKey("teams.id"))
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
-    year_id = db.Column(db.Integer, db.ForeignKey("years.id"))
-    wins = db.Column(db.Integer)
-    losses = db.Column(db.Integer)
-    ties = db.Column(db.Integer)
+#     id = db.Column(db.Integer, primary_key=True)
+#     team_id = db.Column(db.Integer, db.ForeignKey("teams.id"))
+#     year_id = db.Column(db.Integer, db.ForeignKey("years.id"))
+#     wins = db.Column(db.Integer)
+#     losses = db.Column(db.Integer)
+#     ties = db.Column(db.Integer)
 
-    team = db.relationship("Team", backref="record")
-    year = db.relationship("Year", backref="record")
-    user = db.relationship("User", backref="record")
+#     team = db.relationship("Team", backref="record")
+#     year = db.relationship("Year", backref="record")
 
-    def __repr__(self):
-        user_name = self.user.name if self.user else "No user associated"
-        return f"<Record Team={self.team.team_name}, User={user_name}, Year={self.year.year}, Wins={self.wins}, Losses={self.losses}, Ties={self.ties}>"
+#     def __repr__(self):
+#         return f"<Record Team={self.team.team_name}, Year={self.year.year}, Wins={self.wins}, Losses={self.losses}, Ties={self.ties}>"
 
-    def to_dict(self):
-        user_name = self.user.name if self.user else "No user associated"
-        return {
-            "id": self.id,
-            "team": self.team.team_name,
-            "user": user_name,
-            "year": self.year.year,
-            "wins": self.wins,
-            "losses": self.losses,
-            "ties": self.ties,
-        }
+#     def to_dict(self):
+#         return {
+#             "id": self.id,
+#             "team": self.team.team_name,
+#             "year": self.year.year,
+#             "wins": self.wins,
+#             "losses": self.losses,
+#             "ties": self.ties,
+#         }
 
 
-class WinPool(db.Model):
-    __tablename__ = "wins_pool"
+# class WinPool(db.Model):
+#     __tablename__ = "wins_pool"
 
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    year_id = db.Column(db.Integer, db.ForeignKey("years.id"))
-    total_wins = db.Column(db.Integer)
+#     id = db.Column(db.Integer, primary_key=True)
+#     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+#     year_id = db.Column(db.Integer, db.ForeignKey("years.id"))
+#     total_wins = db.Column(db.Integer)
 
-    # draft_picks = db.relationship("DraftPick", backref="win_pool", lazy="dynamic")
-    user = db.relationship("User", backref="win_pool")
+#     # draft_picks = db.relationship("DraftPick", backref="win_pool", lazy="dynamic")
+#     user = db.relationship("User", backref="win_pool")
 
-    def __repr__(self):
-        return f"<User Wins User={self.user.name}, Total Wins={self.total_wins}>"
+#     def __repr__(self):
+#         return f"<User Wins User={self.user.name}, Total Wins={self.total_wins}>"
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "user": self.user.name,
-            "total_wins": self.total_wins,
-            "draft_picks": [draft_pick.to_dict() for draft_pick in self.draft_picks],
-        }
+#     def to_dict(self):
+#         return {
+#             "id": self.id,
+#             "user": self.user.name,
+#             "total_wins": self.total_wins,
+#             "draft_picks": [draft_pick.to_dict() for draft_pick in self.draft_picks],
+#         }
 
 
-class WeeklyWin(db.Model):
-    __tablename__ = "weekly_wins"
+# class WeeklyWin(db.Model):
+#     __tablename__ = "weekly_wins"
 
-    id = db.Column(db.Integer, primary_key=True)
-    win_pool_id = db.Column(db.Integer, db.ForeignKey("wins_pool.id"))
-    week_number_id = db.Column(db.Integer, db.ForeignKey("weeks.id"))
-    wins = db.Column(db.Integer)
+#     id = db.Column(db.Integer, primary_key=True)
+#     win_pool_id = db.Column(db.Integer, db.ForeignKey("wins_pool.id"))
+#     week_number_id = db.Column(db.Integer, db.ForeignKey("weeks.id"))
+#     wins = db.Column(db.Integer)
 
-    def __repr__(self):
-        return f"<Wins For The Week: Week={self.week_number_id}, Wins={self.wins}>"
+#     def __repr__(self):
+#         return f"<Wins For The Week: Week={self.week_number_id}, Wins={self.wins}>"
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "win_pool_id": self.win_pool_id,
-            "week": self.week_number_id,
-            "wins": self.wins,
-        }
+#     def to_dict(self):
+#         return {
+#             "id": self.id,
+#             "win_pool_id": self.win_pool_id,
+#             "week": self.week_number_id,
+#             "wins": self.wins,
+#         }
