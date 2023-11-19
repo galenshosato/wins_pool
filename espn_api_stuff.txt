@@ -1,0 +1,4 @@
+Api URL Example:
+
+--Lists all of the games and scoreboards for the week
+https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=2023&seasontype=2&week=11
