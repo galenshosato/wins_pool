@@ -10,6 +10,7 @@ sqlalchemy = "*"
 pytest = "*"
 mysql-connector-python = "*"
 flask-testing = "*"
+requests = "*"
 
 [dev-packages]
 

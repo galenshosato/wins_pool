@@ -108,7 +108,9 @@ class TestUserDraftPick:
             db.session.add(user_draft_pick)
             db.session.commit()
 
-            saved_user_draft_pick = UserDraftPick.query.first()
+            saved_user_draft_pick = UserDraftPick.query.filter(
+                UserDraftPick.user == user
+            ).first()
 
             # Validate Columns
             assert saved_user_draft_pick is not None
