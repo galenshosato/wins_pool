@@ -1,9 +1,9 @@
 -- Remember, you don't need to do everything all at once...
 
 -- Create Drafting Component
-    -Write error handling for user creation
-    -Write tests for getting users and creating users
-    
-    -Create route for assigning teams to user via the draft pick
-    -Create test for assigning teams to user via draft pick
-    -Write error handling for route and test
+    -Create test for getting the draft list (in draft_test)
+
+    -Create route and test for getting the draft picks for each user
+    -Create route and test for getting the teams drafted by each user
+
+

@@ -44,6 +44,8 @@ def users():
         db.session.add(new_user)
         db.session.commit()
 
+        return make_response(new_user.to_dict(), 201)
+
 
 # Routes for Draft Feature
 @app.route("/assign_draft_picks", methods=["POST"])
@@ -113,21 +115,83 @@ def assign_draft_picks():
         return make_response({"error": "Internal server error"}, 500)
 
 
+@app.route("/draft_order")
+def manage_draft_order():
+    users = User.query.all()
+    if not users:
+        return make_response({"error": "No users found. Please add users"}, 404)
+
+    draft_order = [
+        {
+            "name": draft.user.name,
+            "pick_number": draft.draft_pick.pick_number,
+            "team": draft.team.team_name,
+        }
+        for user in users
+        for draft in user.user_draft_picks
+    ]
+
+    draft_order = sorted(draft_order, key=lambda x: x["pick_number"])
+
+    return make_response(draft_order, 200)
+
+
 @app.route("/assign_team_to_user", methods=["PATCH"])
 # JSON request = {
 # "userId": user_id,
-# "year": year,
+# "yearId": year_id,
 # "draftId": draft_pick_id,
-# "teamId": team_id}
+# "teamId": team_id }
 def assign_team_to_user():
     try:
-        data = request.json()
+        data = request.get_json()
+
+        # Check for missing or invalid JSON data
+        if (
+            not data
+            or "userId" not in data
+            or "yearId" not in data
+            or "draftId" not in data
+            or "teamId" not in data
+        ):
+            return make_response({"error": "Invalid JSON data"}, 400)
+
+        user_id = data.get("userId")
+        year_id = data.get("yearId")
+        draft_id = data.get("draftId")
+        team_id = data.get("teamId")
+
+        # Check if team exists
+        team = Team.query.filter_by(id=team_id).first()
+        if not team:
+            return make_response({"error": "Team not found"}, 404)
+
+        user = User.query.filter_by(id=user_id).first()
+        draft_pick = DraftPick.query.filter_by(id=draft_id).first()
+
+        user_pick = UserDraftPick.query.filter_by(
+            user_id=user_id, year_id=year_id, draft_pick_id=draft_id
+        ).first()
+        if not user_pick:
+            return make_response({"error": "UserDraftPick object not found"}, 404)
+
+        user_pick.team_id = team_id
+
+        db.session.add(user_pick)
+        db.session.commit()
+
+        return make_response(
+            {
+                "Success": f"{team.team_name} has been assigned to {user.name} with pick {draft_pick.pick_number}"
+            },
+            200,
+        )
 
     except Exception as e:
         # Handle unexpected errors
         print(f"Error:{e}")
         db.session.rollback()
-        return make_response({"error": "internal server error"}, 500)
+        return make_response({"error": "Internal server error"}, 500)
 
 
 if __name__ == "__main__":

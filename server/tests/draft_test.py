@@ -138,5 +138,111 @@ class TestDraftAssignments:
         assert response.content_type == "application/json"
         assert response.json
 
-    # def test_team_assignments_to_user(self):
-    #     pass
+
+class TestTeamAssignments:
+    """Tests related to team assignments via the draft"""
+
+    # JSON request = {
+    # "userId": user_id,
+    # "yearId": year_id,
+    # "draftId": draft_pick_id,
+    # "teamId": team_id }
+
+    @pytest.fixture
+    def sample_data(self):
+        with app.app_context():
+            user = User(name="galen")
+            year = Year(year=2023)
+            draft_pick_1 = DraftPick(pick_number=1)
+            draft_pick_5 = DraftPick(pick_number=5)
+
+            team1 = Team(team_name="team1")
+            team2 = Team(team_name="team2")
+
+            db.session.add_all([user, year, draft_pick_1, draft_pick_5, team1, team2])
+            db.session.commit()
+
+            test_team_assignment1 = UserDraftPick(
+                user=user,
+                year=year,
+                draft_pick=draft_pick_1,
+            )
+
+            test_team_assignment2 = UserDraftPick(
+                user=user,
+                year=year,
+                draft_pick=draft_pick_5,
+            )
+
+            db.session.add_all([test_team_assignment1, test_team_assignment2])
+            db.session.commit()
+
+            yield {
+                "user": user,
+                "year": year,
+                "pick1": draft_pick_1,
+                "pick5": draft_pick_5,
+                "team1": team1,
+                "team2": team2,
+            }
+
+            # Clean Up
+            db.session.delete(test_team_assignment1)
+            db.session.delete(test_team_assignment2)
+            db.session.delete(user)
+            db.session.delete(year)
+            db.session.delete(draft_pick_1)
+            db.session.delete(draft_pick_5)
+            db.session.delete(team1)
+            db.session.delete(team2)
+
+            db.session.commit()
+
+    def test_team_assignments_success(self, sample_data):
+        data1 = {
+            "userId": sample_data["user"].id,
+            "yearId": sample_data["year"].id,
+            "draftId": sample_data["pick1"].id,
+            "teamId": sample_data["team1"].id,
+        }
+        data2 = {
+            "userId": sample_data["user"].id,
+            "yearId": sample_data["year"].id,
+            "draftId": sample_data["pick5"].id,
+            "teamId": sample_data["team2"].id,
+        }
+
+        response1 = app.test_client().patch("/assign_team_to_user", json=data1)
+
+        assert response1.status_code == 200
+        assert (
+            response1.json["Success"]
+            == f"{sample_data['team1'].team_name} has been assigned to {sample_data['user'].name} with pick {sample_data['pick1'].pick_number}"
+        )
+
+        # Retrieve the specific UserDraftPick instance from the collection
+        user_draft_pick1 = UserDraftPick.query.filter_by(
+            user_id=sample_data["user"].id, draft_pick_id=sample_data["pick1"].id
+        ).first()
+
+        assert user_draft_pick1.team == sample_data["team1"]
+
+        response2 = app.test_client().patch("/assign_team_to_user", json=data2)
+        assert response2.status_code == 200
+        assert (
+            response2.json["Success"]
+            == f"{sample_data['team2'].team_name} has been assigned to {sample_data['user'].name} with pick {sample_data['pick5'].pick_number}"
+        )
+
+        # Retrieve the specific UserDraftPick instance from the collection
+        user_draft_pick2 = UserDraftPick.query.filter_by(
+            user_id=sample_data["user"].id, draft_pick_id=sample_data["pick5"].id
+        ).first()
+
+        assert user_draft_pick2.team == sample_data["team2"]
+
+        test_user = User.query.filter_by(id=sample_data["user"].id).first()
+        teams = [team.team.team_name for team in test_user.user_draft_picks]
+
+        assert len(teams) == 2
+        assert teams == ["team1", "team2"]
