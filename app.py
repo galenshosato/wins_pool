@@ -115,11 +115,24 @@ def assign_draft_picks():
         return make_response({"error": "Internal server error"}, 500)
 
 
-@app.route("/draft_order")
-def manage_draft_order():
-    users = User.query.all()
-    if not users:
-        return make_response({"error": "No users found. Please add users"}, 404)
+@app.route("/<int:year>/<int:id>/pick_numbers")
+def get_picks_by_user_id_and_year(year, id):
+    draft_year = Year.query.filter_by(year=year).first()
+    user = User.query.filter_by(id=id).first()
+    user_picks_for_year = UserDraftPick.query.filter_by(
+        year_id=draft_year.id, user_id=user.id
+    ).all()
+    picks = [pick.draft_pick.to_dict() for pick in user_picks_for_year]
+    return make_response(picks, 200)
+
+
+@app.route("/<int:year>/draft_order")
+def manage_draft_order(year):
+    draft_year = Year.query.filter_by(year=year).first()
+    if not draft_year:
+        return make_response({"error": "Please select a valid year"}, 404)
+
+    draft_picks = UserDraftPick.query.filter_by(year_id=draft_year.id).all()
 
     draft_order = [
         {
@@ -127,8 +140,7 @@ def manage_draft_order():
             "pick_number": draft.draft_pick.pick_number,
             "team": draft.team.team_name,
         }
-        for user in users
-        for draft in user.user_draft_picks
+        for draft in draft_picks
     ]
 
     draft_order = sorted(draft_order, key=lambda x: x["pick_number"])
@@ -192,6 +204,18 @@ def assign_team_to_user():
         print(f"Error:{e}")
         db.session.rollback()
         return make_response({"error": "Internal server error"}, 500)
+
+
+@app.route("/<int:year>/<int:id>/teams")
+def get_teams_by_user_id_and_year(year, id):
+    draft_year = Year.query.filter_by(year=year).first()
+    user = User.query.filter_by(id=id).first()
+    user_teams_for_year = UserDraftPick.query.filter_by(
+        year_id=draft_year.id, user_id=user.id
+    ).all()
+    teams = [team.team.to_dict() for team in user_teams_for_year]
+
+    return make_response(teams, 200)
 
 
 if __name__ == "__main__":

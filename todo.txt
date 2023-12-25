@@ -3,7 +3,7 @@
 -- Create Drafting Component
     -Create test for getting the draft list (in draft_test)
 
-    -Create route and test for getting the draft picks for each user
-    -Create route and test for getting the teams drafted by each user
+    -Create test for getting the draft picks for each user
+    -Create test for getting the teams drafted by each user
 
 
