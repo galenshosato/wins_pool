@@ -138,6 +138,17 @@ class TestDraftAssignments:
         assert response.content_type == "application/json"
         assert response.json
 
+    def test_get_pick_numbers_by_year(self, sample_data):
+        data = {"name": "galen", "year": 2023, "draftPicks": [1, 5, 10]}
+        app.test_client().post("/assign_draft_picks", json=data)
+        user = sample_data["user"]
+        year = sample_data["year"]
+        response = app.test_client().get(f"/{year.year}/{user.id}/pick_numbers")
+
+        assert response.status_code == 200
+        assert len(response.json) == 3
+        assert response.json[1]["pick_number"] == 5
+
 
 class TestTeamAssignments:
     """Tests related to team assignments via the draft"""
@@ -199,50 +210,55 @@ class TestTeamAssignments:
             db.session.commit()
 
     def test_team_assignments_success(self, sample_data):
+        user = sample_data["user"]
+        year = sample_data["year"]
+
         data1 = {
-            "userId": sample_data["user"].id,
-            "yearId": sample_data["year"].id,
             "draftId": sample_data["pick1"].id,
             "teamId": sample_data["team1"].id,
         }
         data2 = {
-            "userId": sample_data["user"].id,
-            "yearId": sample_data["year"].id,
             "draftId": sample_data["pick5"].id,
             "teamId": sample_data["team2"].id,
         }
 
-        response1 = app.test_client().patch("/assign_team_to_user", json=data1)
+        response1 = app.test_client().patch(f"/{year.year}/{user.id}/teams", json=data1)
 
         assert response1.status_code == 200
         assert (
             response1.json["Success"]
-            == f"{sample_data['team1'].team_name} has been assigned to {sample_data['user'].name} with pick {sample_data['pick1'].pick_number}"
+            == f"{sample_data['team1'].team_name} has been assigned to {user.name} with pick {sample_data['pick1'].pick_number}"
         )
 
         # Retrieve the specific UserDraftPick instance from the collection
         user_draft_pick1 = UserDraftPick.query.filter_by(
-            user_id=sample_data["user"].id, draft_pick_id=sample_data["pick1"].id
+            user_id=user.id, draft_pick_id=sample_data["pick1"].id
         ).first()
 
         assert user_draft_pick1.team == sample_data["team1"]
 
-        response2 = app.test_client().patch("/assign_team_to_user", json=data2)
+        response2 = app.test_client().patch(f"/{year.year}/{user.id}/teams", json=data2)
         assert response2.status_code == 200
         assert (
             response2.json["Success"]
-            == f"{sample_data['team2'].team_name} has been assigned to {sample_data['user'].name} with pick {sample_data['pick5'].pick_number}"
+            == f"{sample_data['team2'].team_name} has been assigned to {user.name} with pick {sample_data['pick5'].pick_number}"
         )
 
         # Retrieve the specific UserDraftPick instance from the collection
         user_draft_pick2 = UserDraftPick.query.filter_by(
-            user_id=sample_data["user"].id, draft_pick_id=sample_data["pick5"].id
+            user_id=user.id, draft_pick_id=sample_data["pick5"].id
         ).first()
 
         assert user_draft_pick2.team == sample_data["team2"]
 
-        test_user = User.query.filter_by(id=sample_data["user"].id).first()
-        teams = [team.team.team_name for team in test_user.user_draft_picks]
+        # test_user = User.query.filter_by(id=sample_data["user"].id).first()
+        # teams = [team.team.team_name for team in test_user.user_draft_picks]
 
-        assert len(teams) == 2
-        assert teams == ["team1", "team2"]
+        # assert len(teams) == 2
+        # assert teams == ["team1", "team2"]
+
+        get_response = app.test_client().get(f"/{year.year}/{user.id}/teams")
+
+        assert get_response.status_code == 200
+        assert len(get_response.json) == 2
+        assert get_response.json[1]["team_name"] == "team2"

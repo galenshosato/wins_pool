@@ -17,6 +17,7 @@ class User(db.Model):
     name = db.Column(db.String)
     email = db.Column(db.String)
     password = db.Column(db.String)
+    deleted = db.Column(db.Boolean)
     money_owed = db.Column(db.Numeric(precision=10, scale=2))
 
     def __repr__(self):
@@ -27,6 +28,7 @@ class User(db.Model):
             "id": self.id,
             "name": self.name,
             "email": self.email,
+            "deleted": self.deleted,
             "money_owed": self.money_owed,
         }
 
@@ -98,71 +100,74 @@ class UserDraftPick(db.Model):
     team = db.relationship("Team", backref="user_draft_picks")
 
 
-# class Record(db.Model):
-#     __tablename__ = "records"
+class Record(db.Model):
+    __tablename__ = "records"
 
-#     id = db.Column(db.Integer, primary_key=True)
-#     team_id = db.Column(db.Integer, db.ForeignKey("teams.id"))
-#     year_id = db.Column(db.Integer, db.ForeignKey("years.id"))
-#     wins = db.Column(db.Integer)
-#     losses = db.Column(db.Integer)
-#     ties = db.Column(db.Integer)
+    id = db.Column(db.Integer, primary_key=True)
+    team_id = db.Column(db.Integer, db.ForeignKey("teams.id"))
+    year_id = db.Column(db.Integer, db.ForeignKey("years.id"))
+    wins = db.Column(db.Integer)
+    losses = db.Column(db.Integer)
+    ties = db.Column(db.Integer)
 
-#     team = db.relationship("Team", backref="record")
-#     year = db.relationship("Year", backref="record")
+    team = db.relationship("Team", backref="record")
+    year = db.relationship("Year", backref="record")
 
-#     def __repr__(self):
-#         return f"<Record Team={self.team.team_name}, Year={self.year.year}, Wins={self.wins}, Losses={self.losses}, Ties={self.ties}>"
+    def __repr__(self):
+        return f"<Record Team={self.team.team_name}, Year={self.year.year}, Wins={self.wins}, Losses={self.losses}, Ties={self.ties}>"
 
-#     def to_dict(self):
-#         return {
-#             "id": self.id,
-#             "team": self.team.team_name,
-#             "year": self.year.year,
-#             "wins": self.wins,
-#             "losses": self.losses,
-#             "ties": self.ties,
-#         }
-
-
-# class WinPool(db.Model):
-#     __tablename__ = "wins_pool"
-
-#     id = db.Column(db.Integer, primary_key=True)
-#     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-#     year_id = db.Column(db.Integer, db.ForeignKey("years.id"))
-#     total_wins = db.Column(db.Integer)
-
-#     draft_picks = db.relationship("DraftPick", backref="win_pool", lazy="dynamic")
-#     user = db.relationship("User", backref="win_pool")
-
-#     def __repr__(self):
-#         return f"<User Wins User={self.user.name}, Total Wins={self.total_wins}>"
-
-#     def to_dict(self):
-#         return {
-#             "id": self.id,
-#             "user": self.user.name,
-#             "total_wins": self.total_wins,
-#             "draft_picks": [draft_pick.to_dict() for draft_pick in self.draft_picks],
-#         }
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "team": self.team.team_name,
+            "year": self.year.year,
+            "wins": self.wins,
+            "losses": self.losses,
+            "ties": self.ties,
+        }
 
 
-# class WeeklyWin(db.Model):
-#     __tablename__ = "weekly_wins"
+class WinPool(db.Model):
+    __tablename__ = "wins_pool"
 
-#     id = db.Column(db.Integer, primary_key=True)
-#     win_pool_id = db.Column(db.Integer, db.ForeignKey("wins_pool.id"))
-#     week_number_id = db.Column(db.Integer, db.ForeignKey("weeks.id"))
-#     wins = db.Column(db.Integer)
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    year_id = db.Column(db.Integer, db.ForeignKey("years.id"))
+    total_wins = db.Column(db.Integer)
 
-#     def __repr__(self):
-#         return f"<Wins For The Week: Week={self.week_number_id}, Wins={self.wins}>"
+    user = db.relationship("User", backref="win_pool")
+    year = db.relationship("Year", backref="win_pool")
 
-#     def to_dict(self):
-#         return {
-#             "id": self.id,
-#             "win_pool_id": self.win_pool_id,
-#             "week": self.week_number_id,
-#             "wins": self.wins,
-#         }
+    def __repr__(self):
+        return f"<User Wins User={self.user.name}, Total Wins={self.total_wins}, Year = {self.year.year}>"
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user": self.user.name,
+            "year": self.year.year,
+            "total_wins": self.total_wins,
+            "teams_drafted": [
+                pick.team.team_name for pick in self.user.user_draft_picks
+            ],
+        }
+
+
+class WeeklyWin(db.Model):
+    __tablename__ = "weekly_wins"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    year_id = db.Column(db.Integer, db.ForeignKey("years.id"))
+    week_id = db.Column(db.Integer, db.ForeignKey("weeks.id"))
+    wins = db.Column(db.Integer)
+
+    def __repr__(self):
+        return f"<Wins For The Week: Week={self.week_number_id}, Wins={self.wins}>"
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "week": self.week.week_number,
+            "wins": self.wins,
+        }

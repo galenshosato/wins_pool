@@ -18,18 +18,21 @@ class TestCRUDUser:
                     name="Morgan",
                     email="test@test.com",
                     password="password",
+                    deleted=False,
                     money_owed=0.00,
                 ),
                 User(
                     name="Anthony",
                     email="test2@test.com",
                     password="password2",
+                    deleted=False,
                     money_owed=0.00,
                 ),
                 User(
                     name="Patrick",
                     email="test3@test.com",
                     password="password3",
+                    deleted=False,
                     money_owed=0.00,
                 ),
             )

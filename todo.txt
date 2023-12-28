@@ -1,9 +1,25 @@
 -- Remember, you don't need to do everything all at once...
 
--- Create Drafting Component
-    -Create test for getting the draft list (in draft_test)
+-- Create Drafting Component - DONE
 
-    -Create test for getting the draft picks for each user
-    -Create test for getting the teams drafted by each user
+--Create Wins Pool Component
+  - Description: User has drafted their teams and should see the cumulative amount of wins amongst their teams
+  - Features:
+    - see wins by accessing record of the team per year
+    - want to know the total amount of wins per week per user (to plot on a graph)
+    - Update wins using the espn API
+    - *Note* Morgan wants to know which teams won each week, rather than the cumulative amount of wins. Why?
+
+--Create Admin access to Strength of Schedule
+  - Plan: Keep track of the records of every team via the ESPN API. Do math on strength of schedule
+
+
+
+--TODO--
+  -Write test for all users and total wins for the year
+  -Write test to get total wins by user for the year
+  -Write test to get each weekly win by user and year and week
+  -Write route and test to update weekly win, total wins, and record update
+
 
 

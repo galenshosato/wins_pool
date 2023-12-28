@@ -1,5 +1,17 @@
 from flask import Flask, jsonify, request, make_response, session as browser_session
-from server import db, migrate, User, Week, Year, Team, DraftPick, UserDraftPick
+from server import (
+    db,
+    migrate,
+    User,
+    Week,
+    Year,
+    Team,
+    DraftPick,
+    UserDraftPick,
+    WinPool,
+    WeeklyWin,
+    Record,
+)
 
 
 app = Flask(__name__)
@@ -148,74 +160,118 @@ def manage_draft_order(year):
     return make_response(draft_order, 200)
 
 
-@app.route("/assign_team_to_user", methods=["PATCH"])
-# JSON request = {
-# "userId": user_id,
-# "yearId": year_id,
-# "draftId": draft_pick_id,
-# "teamId": team_id }
-def assign_team_to_user():
-    try:
-        data = request.get_json()
-
-        # Check for missing or invalid JSON data
-        if (
-            not data
-            or "userId" not in data
-            or "yearId" not in data
-            or "draftId" not in data
-            or "teamId" not in data
-        ):
-            return make_response({"error": "Invalid JSON data"}, 400)
-
-        user_id = data.get("userId")
-        year_id = data.get("yearId")
-        draft_id = data.get("draftId")
-        team_id = data.get("teamId")
-
-        # Check if team exists
-        team = Team.query.filter_by(id=team_id).first()
-        if not team:
-            return make_response({"error": "Team not found"}, 404)
-
-        user = User.query.filter_by(id=user_id).first()
-        draft_pick = DraftPick.query.filter_by(id=draft_id).first()
-
-        user_pick = UserDraftPick.query.filter_by(
-            user_id=user_id, year_id=year_id, draft_pick_id=draft_id
-        ).first()
-        if not user_pick:
-            return make_response({"error": "UserDraftPick object not found"}, 404)
-
-        user_pick.team_id = team_id
-
-        db.session.add(user_pick)
-        db.session.commit()
-
-        return make_response(
-            {
-                "Success": f"{team.team_name} has been assigned to {user.name} with pick {draft_pick.pick_number}"
-            },
-            200,
-        )
-
-    except Exception as e:
-        # Handle unexpected errors
-        print(f"Error:{e}")
-        db.session.rollback()
-        return make_response({"error": "Internal server error"}, 500)
-
-
-@app.route("/<int:year>/<int:id>/teams")
-def get_teams_by_user_id_and_year(year, id):
+@app.route("/<int:year>/<int:id>/teams", methods=["GET", "PATCH"])
+def teams_by_user_id_and_year(year, id):
     draft_year = Year.query.filter_by(year=year).first()
     user = User.query.filter_by(id=id).first()
-    user_teams_for_year = UserDraftPick.query.filter_by(
-        year_id=draft_year.id, user_id=user.id
-    ).all()
-    teams = [team.team.to_dict() for team in user_teams_for_year]
 
-    return make_response(teams, 200)
+    if request.method == "GET":
+        user_teams_for_year = UserDraftPick.query.filter_by(
+            year_id=draft_year.id, user_id=user.id
+        ).all()
+        teams = [team.team.to_dict() for team in user_teams_for_year]
+
+        return make_response(teams, 200)
+
+    elif request.method == "PATCH":
+        # JSON request = {
+        # "draftId": draft_pick_id,
+        # "teamId": team_id }
+        try:
+            data = request.get_json()
+
+            # Check for missing or invalid JSON data
+            if not data or "draftId" not in data or "teamId" not in data:
+                return make_response({"error": "Invalid JSON data"}, 400)
+
+            draft_id = data.get("draftId")
+            team_id = data.get("teamId")
+
+            # Check if team exists
+            team = Team.query.filter_by(id=team_id).first()
+            if not team:
+                return make_response({"error": "Team not found"}, 404)
+
+            draft_pick = DraftPick.query.filter_by(id=draft_id).first()
+
+            user_pick = UserDraftPick.query.filter_by(
+                user_id=user.id, year_id=draft_year.id, draft_pick_id=draft_id
+            ).first()
+            if not user_pick:
+                return make_response({"error": "UserDraftPick object not found"}, 404)
+
+            user_pick.team_id = team_id
+
+            db.session.add(user_pick)
+            db.session.commit()
+
+            return make_response(
+                {
+                    "Success": f"{team.team_name} has been assigned to {user.name} with pick {draft_pick.pick_number}"
+                },
+                200,
+            )
+
+        except Exception as e:
+            # Handle unexpected errors
+            print(f"Error:{e}")
+            db.session.rollback()
+            return make_response({"error": "Internal server error"}, 500)
+
+
+# Routes for Wins Pool
+@app.route("/<int:year>/wins-pool", methods=["GET", "POST"])
+def wins_pool_by_year(year):
+    year = Year.query.filter_by(year=year).first()
+
+    if request.method == "GET":
+        wins_pools = WinPool.query.filter_by(year_id=year.id).all()
+        wins_pools_to_dict = [win_pool.to_dict() for win_pool in wins_pools]
+        return make_response(wins_pools_to_dict, 200)
+
+    elif request.method == "POST":
+        users = User.query.filter_by(deleted=False).all()
+        for user in users:
+            new_win_pool = WinPool(user=user, year=year, total_wins=0)
+            db.session.add(new_win_pool)
+            db.session.commit()
+
+
+@app.route("/<int:year>/<int:id>/wins-pool", methods=["GET", "PATCH"])
+def win_pool_by_year_and_user_id(year, id):
+    current_year = Year.query.filter_by(year=year).first()
+    user = User.query.filter_by(id=id).first()
+    win_pool = WinPool.query.filter_by(user_id=user.id, year_id=current_year).first()
+
+    if request.method == "GET":
+        return make_response(win_pool.to_dict(), 200)
+
+    elif request.method == "PATCH":
+        user_picks = UserDraftPick.query.filter_by(
+            user_id=user.id, year_id=year.id
+        ).all()
+        team_ids = [team.team_id for team in user_picks]
+        current_total_wins = 0
+        for team_id in team_ids:
+            record = Record.query.filter_by(
+                team_id=team_id, year_id=current_year.id
+            ).first()
+            wins = record.wins
+            current_total_wins += wins
+        win_pool.total_wins = current_total_wins
+        db.session.add(win_pool)
+        db.session.commit()
+
+
+@app.route("/<int:year>/<int:week>/<int:id>/weekly-wins")
+def get_weekly_wins_by_year_week_user_id(year, week, id):
+    current_year = Year.query.filter_by(year=year).first()
+    current_week = Week.query.filter_by(week_number=week).first()
+    current_user = User.query.filter_by(id=id).first()
+    weekly_win = WeeklyWin.query.filter_by(
+        user_id=current_user.id, week_id=current_week.id, year_id=current_year.id
+    ).first()
+    return make_response(weekly_win.to_dict(), 200)
 
 
 if __name__ == "__main__":
