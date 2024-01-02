@@ -1,5 +1,4 @@
 import pytest
-import requests
 import sys
 
 sys.path.append("/home/galensato/Development/code/coding-projects/wins_pool")

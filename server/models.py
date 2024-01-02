@@ -162,6 +162,8 @@ class WeeklyWin(db.Model):
     week_id = db.Column(db.Integer, db.ForeignKey("weeks.id"))
     wins = db.Column(db.Integer)
 
+    week = db.relationship("Week", backref="weekly_win")
+
     def __repr__(self):
         return f"<Wins For The Week: Week={self.week_number_id}, Wins={self.wins}>"
 

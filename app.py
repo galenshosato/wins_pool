@@ -220,47 +220,20 @@ def teams_by_user_id_and_year(year, id):
 
 
 # Routes for Wins Pool
-@app.route("/<int:year>/wins-pool", methods=["GET", "POST"])
+@app.route("/<int:year>/wins-pool")
 def wins_pool_by_year(year):
     year = Year.query.filter_by(year=year).first()
-
-    if request.method == "GET":
-        wins_pools = WinPool.query.filter_by(year_id=year.id).all()
-        wins_pools_to_dict = [win_pool.to_dict() for win_pool in wins_pools]
-        return make_response(wins_pools_to_dict, 200)
-
-    elif request.method == "POST":
-        users = User.query.filter_by(deleted=False).all()
-        for user in users:
-            new_win_pool = WinPool(user=user, year=year, total_wins=0)
-            db.session.add(new_win_pool)
-            db.session.commit()
+    wins_pools = WinPool.query.filter_by(year_id=year.id).all()
+    wins_pools_to_dict = [win_pool.to_dict() for win_pool in wins_pools]
+    return make_response(wins_pools_to_dict, 200)
 
 
-@app.route("/<int:year>/<int:id>/wins-pool", methods=["GET", "PATCH"])
+@app.route("/<int:year>/<int:id>/wins-pool")
 def win_pool_by_year_and_user_id(year, id):
     current_year = Year.query.filter_by(year=year).first()
     user = User.query.filter_by(id=id).first()
     win_pool = WinPool.query.filter_by(user_id=user.id, year_id=current_year).first()
-
-    if request.method == "GET":
-        return make_response(win_pool.to_dict(), 200)
-
-    elif request.method == "PATCH":
-        user_picks = UserDraftPick.query.filter_by(
-            user_id=user.id, year_id=year.id
-        ).all()
-        team_ids = [team.team_id for team in user_picks]
-        current_total_wins = 0
-        for team_id in team_ids:
-            record = Record.query.filter_by(
-                team_id=team_id, year_id=current_year.id
-            ).first()
-            wins = record.wins
-            current_total_wins += wins
-        win_pool.total_wins = current_total_wins
-        db.session.add(win_pool)
-        db.session.commit()
+    return make_response(win_pool.to_dict(), 200)
 
 
 @app.route("/<int:year>/<int:week>/<int:id>/weekly-wins")

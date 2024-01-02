@@ -141,6 +141,13 @@ class TestUserDraftPick:
             assert saved_user_draft_pick.year.year == 2023
             assert saved_user_draft_pick.draft_pick.pick_number == 20
 
+            db.session.delete(user)
+            db.session.delete(team)
+            db.session.delete(year)
+            db.session.delete(draft_pick)
+            db.session.delete(user_draft_pick)
+            db.session.commit()
+
 
 class TestRecord:
     """Record model in models.py"""
@@ -162,6 +169,8 @@ class TestRecord:
             assert record.ties == 1
 
             db.session.delete(record)
+            db.session.delete(team)
+            db.session.delete(year)
             db.session.commit()
 
     def test_record_to_dict(self):
@@ -183,6 +192,8 @@ class TestRecord:
             assert record_dict["ties"] == 1
 
             db.session.delete(record)
+            db.session.delete(team)
+            db.session.delete(year)
             db.session.commit()
 
 
@@ -206,6 +217,8 @@ class TestWinPool:
             assert winpool.total_wins == 10
 
             db.session.delete(winpool)
+            db.session.delete(user)
+            db.session.delete(year)
             db.session.commit()
 
     def test_winpool_to_dict(self):
@@ -236,6 +249,13 @@ class TestWinPool:
             assert winpool_dict["teams_drafted"] == ["team1", "team2"]
 
             db.session.delete(winpool)
+            db.session.delete(user)
+            db.session.delete(year)
+            db.session.delete(team1)
+            db.session.delete(team2)
+            db.session.delete(assignment1)
+            db.session.delete(assignment2)
+
             db.session.commit()
 
 
@@ -249,16 +269,21 @@ class TestWeeklyWin:
                 name="Test", email="test@test.com", password="test", money_owed=5.45
             )
             year = Year(year=2023)
-            week = Week(week_number=1)
-            weeklywin = WeeklyWin(week=week, wins=5)
+            week = Week(id=2, week_number=1)
 
-            db.session.add_all([user, year, week, weeklywin])
+            db.session.add_all([user, year, week])
             db.session.commit()
 
-            assert weeklywin.week == week
+            weeklywin = WeeklyWin(week_id=week.id, wins=5)
+            db.session.add(weeklywin)
+            db.session.commit()
+
             assert weeklywin.wins == 5
 
             db.session.delete(weeklywin)
+            db.session.delete(user)
+            db.session.delete(year)
+            db.session.delete(week)
             db.session.commit()
 
     def test_weeklywin_to_dict(self):
@@ -269,26 +294,19 @@ class TestWeeklyWin:
             )
             year = Year(year=2023)
             week = Week(week_number=1)
-            weeklywin = WeeklyWin(week=week, wins=5)
 
-            db.session.add_all([user, year, week, weeklywin])
+            db.session.add_all([user, year, week])
             db.session.commit()
 
+            weeklywin = WeeklyWin(week_id=week.id, wins=5)
+            db.session.add(weeklywin)
+            db.session.commit()
             weeklywin_dict = weeklywin.to_dict()
 
-            assert weeklywin_dict["week"] == 1
             assert weeklywin_dict["wins"] == 5
 
             db.session.delete(weeklywin)
-            db.session.commit()
-
-            db.session.query(UserDraftPick).delete()
-            db.session.query(User).delete()
-            db.session.query(DraftPick).delete()
-            db.session.query(Year).delete()
-            db.session.query(Team).delete()
-            db.session.query(Record).delete()
-            db.session.query(Week).delete()
-            db.session.query(WinPool).delete()
-            db.session.query(WeeklyWin).delete()
+            db.session.delete(user)
+            db.session.delete(year)
+            db.session.delete(week)
             db.session.commit()

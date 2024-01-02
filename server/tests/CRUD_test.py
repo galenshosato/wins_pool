@@ -75,3 +75,7 @@ class TestCRUDUser:
         assert get_response.status_code == 200
         get_resp_data = get_response.get_json()
         assert len(get_resp_data) == 4
+
+        delete_user = User.query.filter_by(name="Galen").first()
+        db.session.delete(delete_user)
+        db.session.commit()
