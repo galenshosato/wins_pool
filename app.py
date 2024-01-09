@@ -52,7 +52,9 @@ def users():
         name = data.get("name")
         email = data.get("email")
         password = data.get("password")
-        new_user = User(name=name, email=email, password=password, money_owed=0.00)
+        new_user = User(
+            name=name, email=email, password=password, money_owed=0.00, isAdmin=False
+        )
         db.session.add(new_user)
         db.session.commit()
 
@@ -232,7 +234,7 @@ def wins_pool_by_year(year):
 def win_pool_by_year_and_user_id(year, id):
     current_year = Year.query.filter_by(year=year).first()
     user = User.query.filter_by(id=id).first()
-    win_pool = WinPool.query.filter_by(user_id=user.id, year_id=current_year).first()
+    win_pool = WinPool.query.filter_by(user_id=user.id, year_id=current_year.id).first()
     return make_response(win_pool.to_dict(), 200)
 
 

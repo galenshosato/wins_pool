@@ -18,6 +18,7 @@ class User(db.Model):
     email = db.Column(db.String)
     password = db.Column(db.String)
     deleted = db.Column(db.Boolean)
+    isAdmin = db.Column(db.Boolean)
     money_owed = db.Column(db.Numeric(precision=10, scale=2))
 
     def __repr__(self):
@@ -109,12 +110,13 @@ class Record(db.Model):
     wins = db.Column(db.Integer)
     losses = db.Column(db.Integer)
     ties = db.Column(db.Integer)
+    strength_of_schedule = db.Column(db.Numeric(precision=10, scale=3))
 
     team = db.relationship("Team", backref="record")
     year = db.relationship("Year", backref="record")
 
     def __repr__(self):
-        return f"<Record Team={self.team.team_name}, Year={self.year.year}, Wins={self.wins}, Losses={self.losses}, Ties={self.ties}>"
+        return f"<Record Team={self.team.team_name}, Year={self.year.year}, Wins={self.wins}, Losses={self.losses}, Ties={self.ties}, Strength of Schedule ={self.strength_of_schedule}>"
 
     def to_dict(self):
         return {
@@ -124,6 +126,7 @@ class Record(db.Model):
             "wins": self.wins,
             "losses": self.losses,
             "ties": self.ties,
+            "strength_of_schedule": self.strength_of_schedule,
         }
 
 

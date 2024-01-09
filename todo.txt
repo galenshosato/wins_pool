@@ -16,10 +16,6 @@
 
 
 --TODO--
-  -Delete and re-configure the database with tests
-  -Write test for all users and total wins for the year
-  -Write test to get total wins by user for the year
-  -Write test to get each weekly win by user and year and week
   -Write route and test to update weekly win, total wins, and record update
 
 
