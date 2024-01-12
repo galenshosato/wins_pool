@@ -11,6 +11,7 @@ from server import (
     WinPool,
     WeeklyWin,
     Record,
+    Game,
 )
 
 
@@ -46,14 +47,20 @@ def users():
             or "name" not in data
             or "email" not in data
             or "password" not in data
+            or "favorite_team" not in data
         ):
             return make_response({"error": "Invalid JSON data"}, 400)
 
         name = data.get("name")
         email = data.get("email")
         password = data.get("password")
+        favorite_team = data.get("favorite_team")
         new_user = User(
-            name=name, email=email, password=password, money_owed=0.00, isAdmin=False
+            name=name,
+            email=email,
+            password=password,
+            money_owed=0.00,
+            favorite_team=favorite_team,
         )
         db.session.add(new_user)
         db.session.commit()
@@ -247,6 +254,62 @@ def get_weekly_wins_by_year_week_user_id(year, week, id):
         user_id=current_user.id, week_id=current_week.id, year_id=current_year.id
     ).first()
     return make_response(weekly_win.to_dict(), 200)
+
+
+@app.route("/<int:year>/update-wins-week", methods=["PATCH"])
+def update_wins_for_week(year):
+    week = Week.query.filter_by(isActive=True).first()
+    year = Year.query.filter_by(isActive=True).first()
+    games = Game.query.filter_by(week_id=week.id).all()
+    tie = []
+    for game in games:
+        if game.isTie == True:
+            tie.append(game.home_team)
+            tie.append(game.away_team)
+    if len(tie) > 1:
+        for tying_team_id in tie:
+            tying_team_record = Record.query.filter_by(
+                team_id=tying_team_id, year_id=year.id
+            ).first()
+            tying_team_record.ties += 1
+            db.session.add(tying_team_record)
+            db.session.commit()
+
+    winners = [game.winner for game in games if game.winner is not None]
+    losers = [game.loser for game in games if game.loser is not None]
+
+    for winning_team_id in winners:
+        winning_team_record = Record.query.filter_by(
+            team_id=winning_team_id, year_id=year.id
+        ).first()
+        winning_team_record.wins += 1
+        db.session.add(winning_team_record)
+        db.session.commit()
+
+    for losing_team_id in losers:
+        losing_team_record = Record.query.filter_by(
+            team_id=losing_team_id, year_id=year.id
+        ).first()
+        losing_team_record.losses += 1
+        db.session.add(losing_team_record)
+        db.session.commit()
+
+    if week.week_number == 18:
+        next_week = Week.query.filter_by(week_number=0).first()
+        next_week.isActive = True
+        db.session.add(next_week)
+        db.session.commit()
+        week.isActive = False
+        db.session.add(week)
+        db.session.commit()
+    else:
+        next_week = Week.query.filter_by(id=((week.id) + 1)).first()
+        next_week.isActive = True
+        db.session.add(next_week)
+        db.session.commit()
+        week.isActive = False
+        db.session.add(week)
+        db.session.commit()
 
 
 if __name__ == "__main__":

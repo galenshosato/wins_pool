@@ -9,4 +9,5 @@ from server.models import (
     WinPool,
     WeeklyWin,
     Record,
+    Game,
 )
