@@ -121,6 +121,9 @@ class Record(db.Model):
     wins = db.Column(db.Integer)
     losses = db.Column(db.Integer)
     ties = db.Column(db.Integer)
+    opponent_wins = db.Column(db.Integer)
+    opponent_losses = db.Column(db.Integer)
+    opponent_ties = db.Column(db.Integer)
     strength_of_schedule = db.Column(db.Numeric(precision=10, scale=3))
 
     team = db.relationship("Team", backref="record")
@@ -132,11 +135,14 @@ class Record(db.Model):
     def to_dict(self):
         return {
             "id": self.id,
-            "team": self.team.team_name,
+            "team": self.team.to_dict(),
             "year": self.year.year,
             "wins": self.wins,
             "losses": self.losses,
             "ties": self.ties,
+            "opponent_wins": self.opponent_wins,
+            "opponent_losses": self.opponent_losses,
+            "opponent_ties": self.opponent_ties,
             "strength_of_schedule": self.strength_of_schedule,
         }
 

@@ -229,6 +229,9 @@ def teams_by_user_id_and_year(year, id):
 
 
 # Routes for Wins Pool
+
+
+# This gives you all of the wins-pool instances for a given year
 @app.route("/<int:year>/wins-pool")
 def wins_pool_by_year(year):
     year = Year.query.filter_by(year=year).first()
@@ -237,6 +240,7 @@ def wins_pool_by_year(year):
     return make_response(wins_pools_to_dict, 200)
 
 
+# This route returns the win-pool for a given year and given user
 @app.route("/<int:year>/<int:id>/wins-pool")
 def win_pool_by_year_and_user_id(year, id):
     current_year = Year.query.filter_by(year=year).first()
@@ -245,6 +249,7 @@ def win_pool_by_year_and_user_id(year, id):
     return make_response(win_pool.to_dict(), 200)
 
 
+# This route returns the weekly win instance for a given user, for a given week, in a given year
 @app.route("/<int:year>/<int:week>/<int:id>/weekly-wins")
 def get_weekly_wins_by_year_week_user_id(year, week, id):
     current_year = Year.query.filter_by(year=year).first()
@@ -256,6 +261,20 @@ def get_weekly_wins_by_year_week_user_id(year, week, id):
     return make_response(weekly_win.to_dict(), 200)
 
 
+# Getting the team information for the admin SoS view by year
+@app.route("/<int:year>/strength-of-schedule")
+def get_strength_of_schedule_by_year(year):
+    current_year = Year.query.filter_by(year=year).first()
+    userteams_in_pool = UserDraftPick.query.filter_by(year_id=current_year.id).all()
+    strength_of_schedule_response = []
+    for userteam in userteams_in_pool:
+        record = Record.query.filter_by(team_id=userteam.team_id).first()
+        response = {"user": userteam.user.name, "record": record.to_dict()}
+        strength_of_schedule_response.add(response)
+    return make_response(strength_of_schedule_response, 200)
+
+
+# Route that updates the records at the end of the week. Theoretically, this will be a backend process prompted by a git action
 @app.route("/<int:year>/update-wins-week", methods=["PATCH"])
 def update_wins_for_week(year):
     week = Week.query.filter_by(isActive=True).first()
