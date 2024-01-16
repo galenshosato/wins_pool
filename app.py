@@ -12,6 +12,7 @@ from server import (
     WeeklyWin,
     Record,
     Game,
+    calculate_strength_of_schedule,
 )
 
 
@@ -229,8 +230,6 @@ def teams_by_user_id_and_year(year, id):
 
 
 # Routes for Wins Pool
-
-
 # This gives you all of the wins-pool instances for a given year
 @app.route("/<int:year>/wins-pool")
 def wins_pool_by_year(year):
@@ -329,6 +328,57 @@ def update_wins_for_week(year):
         week.isActive = False
         db.session.add(week)
         db.session.commit()
+
+
+@app.route("/<int:year>/<int:week>/update-strength-of-schedule", methods=["PATCH"])
+def update_strength_of_schedule(week, year):
+    current_week = Week.query.filter_by(week_number=week).first()
+    current_year = Year.query.filter_by(year=year).first()
+    teams = Team.query.all()
+    for team in teams:
+        home_games = Game.query.filter(
+            Game.home_team == team.id,
+            Game.year_id == current_year.id,
+            Game.week >= current_week.week,
+        ).all()
+        away_games = Game.query.filter(
+            Game.away_team == team.id,
+            Game.year_id == current_year.id,
+            Game.week >= current_week.week,
+        ).all()
+        home_opponents = [opponent.away_team for opponent in home_games]
+        away_opponents = [opponent.home_team for opponent in away_games]
+        all_opponents = home_opponents + away_opponents
+
+        total_opponent_wins = 0
+        total_opponent_losses = 0
+        total_opponent_ties = 0
+
+        for opponent_id in all_opponents:
+            opponent_record = Record.query.filter_by(
+                team_id=opponent_id, year_id=current_year.id
+            ).first()
+            total_opponent_wins += opponent_record.wins
+            total_opponent_losses += opponent_record.losses
+            total_opponent_ties += opponent_record.ties
+
+        team_record = Record.query.filter_by(
+            team_id=team.id, year_id=current_year.id
+        ).first()
+        team_record.opponent_wins = total_opponent_wins
+        team_record.opponent_losses = total_opponent_losses
+        team_record.opponent_ties = total_opponent_ties
+
+        strength_of_schedule = calculate_strength_of_schedule(
+            total_opponent_wins, total_opponent_losses, total_opponent_ties
+        )
+        team_record.strength_of_schedule = strength_of_schedule
+        db.session.add(team_record)
+        db.session.commit()
+    return make_response(
+        {"Success": "You have successfully updated the league's strength of schedule"},
+        201,
+    )
 
 
 if __name__ == "__main__":

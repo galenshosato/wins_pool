@@ -185,6 +185,7 @@ class Game(db.Model):
     timeStarted = db.Column(db.DateTime)
     started = db.Column(db.Boolean, default=False)
 
+    year_id = db.Column(db.Integer, db.ForeignKey("years.id"))
     week_id = db.Column(db.Integer, db.ForeignKey("weeks.id"))
     week = db.relationship("Week", backref="games")
 
