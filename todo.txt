@@ -8,7 +8,7 @@
     - see wins by accessing record of the team per year
     - want to know the total amount of wins per week per user (to plot on a graph)
     - Update wins using the espn API
-    - *Note* Morgan wants to know which teams won each week, rather than the cumulative amount of wins. Why?
+    - *Note* Morgan wants to know which teams won each week (which we can do)
 
 --Create Admin access to Strength of Schedule
   - Plan: Keep track of the records of every team via the ESPN API. Do math on strength of schedule
@@ -16,6 +16,8 @@
 
 
 --TODO--
+  -Do an add_all() for teams and commit()
+  -Write unit tests for the update route and the strength of schedule route
   -Write route and test to update weekly win, total wins, and record update
 
 
