@@ -60,7 +60,12 @@ class TestCRUDUser:
         assert resp_data[2]["email"] == "test3@test.com"
 
     def test_create_user(self, sample_data):
-        data = {"name": "Galen", "email": "test4@test.com", "password": "password4"}
+        data = {
+            "name": "Galen",
+            "email": "test4@test.com",
+            "password": "password4",
+            "favorite_team": "Patriots",
+        }
         response = app.test_client().post("/users", json=data)
 
         assert response.status_code == 201

@@ -16,7 +16,6 @@
 
 
 --TODO--
-  -Do an add_all() for teams and commit()
   -Write unit tests for the update route and the strength of schedule route
   -Write route and test to update weekly win, total wins, and record update
 

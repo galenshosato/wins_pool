@@ -196,6 +196,9 @@ def teams_by_user_id_and_year(year, id):
 
             draft_id = data.get("draftId")
             team_id = data.get("teamId")
+            print("Draft Id is: ", draft_id)
+            print("Team Id is: ", team_id)
+            print("User Id is: ", user.id)
 
             # Check if team exists
             team = Team.query.filter_by(id=team_id).first()
@@ -207,6 +210,7 @@ def teams_by_user_id_and_year(year, id):
             user_pick = UserDraftPick.query.filter_by(
                 user_id=user.id, year_id=draft_year.id, draft_pick_id=draft_id
             ).first()
+            print(UserDraftPick.query.all())
             if not user_pick:
                 return make_response({"error": "UserDraftPick object not found"}, 404)
 
@@ -277,7 +281,7 @@ def get_strength_of_schedule_by_year(year):
 @app.route("/<int:year>/update-wins-week", methods=["PATCH"])
 def update_wins_for_week(year):
     week = Week.query.filter_by(isActive=True).first()
-    year = Year.query.filter_by(isActive=True).first()
+    year = Year.query.filter_by(year=year).first()
     games = Game.query.filter_by(week_id=week.id).all()
     tie = []
     for game in games:
@@ -313,13 +317,14 @@ def update_wins_for_week(year):
         db.session.commit()
 
     if week.week_number == 18:
-        next_week = Week.query.filter_by(week_number=0).first()
+        next_week = Week.query.filter_by(week_number=1).first()
         next_week.isActive = True
         db.session.add(next_week)
         db.session.commit()
         week.isActive = False
         db.session.add(week)
         db.session.commit()
+        return make_response({"Success": "You have updated this weeks winners"}, 200)
     else:
         next_week = Week.query.filter_by(id=((week.id) + 1)).first()
         next_week.isActive = True
@@ -328,6 +333,7 @@ def update_wins_for_week(year):
         week.isActive = False
         db.session.add(week)
         db.session.commit()
+        return make_response({"Success": "You have updated this weeks winners"}, 200)
 
 
 @app.route("/<int:year>/<int:week>/update-strength-of-schedule", methods=["PATCH"])

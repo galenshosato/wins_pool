@@ -1,11 +1,12 @@
 import pytest
 import sys
+from datetime import datetime
 
 sys.path.append("/home/galensato/Development/code/coding-projects/wins_pool")
 
 from app import app
 from server.extensions import db
-from server.models import WinPool, Year, User, Week, WeeklyWin
+from server.models import WinPool, Year, User, Week, WeeklyWin, Game, Record, Team
 
 
 class TestWinsPoolRoutes:
@@ -70,3 +71,96 @@ class TestWinsPoolRoutes:
         assert response.status_code == 200
         assert response.json["wins"] == 2
         assert response.json["week"] == 5
+
+
+class TestUpdateRoutes:
+    @pytest.fixture
+    def sample_data(self):
+        with app.app_context():
+            year = Year(year=2022, isActive=True)
+            week = Week(week_number=20, isActive=True)
+            week2 = Week(week_number=21, isActive=False)
+            team1 = Team(team_name="test1")
+            team2 = Team(team_name="test2")
+            team3 = Team(team_name="test3")
+            team4 = Team(team_name="test4")
+            db.session.add_all([year, week, week2, team1, team2, team3, team4])
+            db.session.commit()
+
+            game1 = Game(
+                home_team=1,
+                away_team=2,
+                winner=1,
+                loser=2,
+                isTie=False,
+                timeStarted=datetime.utcnow(),
+                started=True,
+                week=week,
+                year_id=1,
+            )
+            game2 = Game(
+                home_team=3,
+                away_team=4,
+                isTie=True,
+                timeStarted=datetime.utcnow(),
+                started=True,
+                week=week,
+                year_id=1,
+            )
+
+            record1 = Record(year_id=1, team=team1)
+            record2 = Record(year_id=1, team=team2)
+            record3 = Record(year_id=1, team=team3)
+            record4 = Record(year_id=1, team=team4)
+
+            db.session.add_all([record1, record2, record3, record4, game1, game2])
+            db.session.commit()
+
+            yield {
+                "year": year,
+                "week": week,
+                "week2": week2,
+                "game1": game1,
+                "game2": game2,
+            }
+
+            # Clean up the test data
+            db.session.delete(year)
+            db.session.delete(week)
+            db.session.delete(week2)
+            db.session.delete(game1)
+            db.session.delete(game2)
+            db.session.query(Record).delete()
+            db.session.delete(team1)
+            db.session.delete(team2)
+            db.session.delete(team3)
+            db.session.delete(team4)
+            db.session.commit()
+
+    def test_update_wins_for_week_route(self, sample_data):
+        response = app.test_client().patch(
+            f"/{sample_data['year'].year}/update-wins-week"
+        )
+        assert response.status_code == 200
+
+        # Check if the records were updated correctly
+        team1_record = Record.query.filter_by(
+            team_id=1, year_id=sample_data["year"].id
+        ).first()
+        team2_record = Record.query.filter_by(
+            team_id=2, year_id=sample_data["year"].id
+        ).first()
+        team3_record = Record.query.filter_by(
+            team_id=3, year_id=sample_data["year"].id
+        ).first()
+        team4_record = Record.query.filter_by(
+            team_id=4, year_id=sample_data["year"].id
+        ).first()
+
+        assert team1_record.wins == 1
+        assert team2_record.losses == 1
+        assert team2_record.ties == 0
+        assert team3_record.ties == 1
+        assert team3_record.wins == 0
+        assert team4_record.losses == 0
+        assert team4_record.ties == 1

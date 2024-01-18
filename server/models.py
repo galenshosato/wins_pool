@@ -91,7 +91,7 @@ class DraftPick(db.Model):
     pick_number = db.Column(db.Integer)
 
     def __repr__(self):
-        return f"<Draft Pick Number = {self.pick_number}>"
+        return f"<Draft Pick Id = {self.id} Number = {self.pick_number}>"
 
     def to_dict(self):
         return {"pick_number": self.pick_number}
@@ -111,6 +111,9 @@ class UserDraftPick(db.Model):
     year = db.relationship("Year", backref="user_draft_picks")
     team = db.relationship("Team", backref="user_draft_picks")
 
+    def __repr__(self):
+        return f"< User = {self.user}, Draft Pick = {self.draft_pick}, Year = {self.year}, Team = {self.team}>"
+
 
 class Record(db.Model):
     __tablename__ = "records"
@@ -118,12 +121,12 @@ class Record(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     team_id = db.Column(db.Integer, db.ForeignKey("teams.id"))
     year_id = db.Column(db.Integer, db.ForeignKey("years.id"))
-    wins = db.Column(db.Integer)
-    losses = db.Column(db.Integer)
-    ties = db.Column(db.Integer)
-    opponent_wins = db.Column(db.Integer)
-    opponent_losses = db.Column(db.Integer)
-    opponent_ties = db.Column(db.Integer)
+    wins = db.Column(db.Integer, default=0)
+    losses = db.Column(db.Integer, default=0)
+    ties = db.Column(db.Integer, default=0)
+    opponent_wins = db.Column(db.Integer, default=0)
+    opponent_losses = db.Column(db.Integer, default=0)
+    opponent_ties = db.Column(db.Integer, default=0)
     strength_of_schedule = db.Column(db.Numeric(precision=10, scale=3))
 
     team = db.relationship("Team", backref="record")
@@ -190,7 +193,7 @@ class Game(db.Model):
     week = db.relationship("Week", backref="games")
 
     def get_team(self, team_id):
-        team = Team.query.get(team_id)
+        team = Team.query.filter_by(id=team_id).first()
         return (
             {
                 "id": team.id,
