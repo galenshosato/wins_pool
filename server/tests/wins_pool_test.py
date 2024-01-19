@@ -6,7 +6,18 @@ sys.path.append("/home/galensato/Development/code/coding-projects/wins_pool")
 
 from app import app
 from server.extensions import db
-from server.models import WinPool, Year, User, Week, WeeklyWin, Game, Record, Team
+from server.models import (
+    WinPool,
+    Year,
+    User,
+    Week,
+    WeeklyWin,
+    Game,
+    Record,
+    Team,
+    UserDraftPick,
+)
+from server.functions.update_functions import calculate_strength_of_schedule
 
 
 class TestWinsPoolRoutes:
@@ -74,6 +85,8 @@ class TestWinsPoolRoutes:
 
 
 class TestUpdateRoutes:
+    """Tests for Updating Records"""
+
     @pytest.fixture
     def sample_data(self):
         with app.app_context():
@@ -164,3 +177,26 @@ class TestUpdateRoutes:
         assert team3_record.wins == 0
         assert team4_record.losses == 0
         assert team4_record.ties == 1
+
+
+class TestStrengthOfScheduleRoutes:
+    """Tests related to Strength of Schedule"""
+
+    @pytest.fixture
+    def sample_data(self):
+        with app.app_context():
+            year = Year(year=2025)
+            team1 = Team(team_name="test1")
+            team2 = Team(team_name="test2")
+            team3 = Team(team_name="test3")
+            db.session.add_all([year, team1, team2, team3])
+            db.session.commit()
+
+            draft_team1 = UserDraftPick(team=team1, year=year)
+            draft_team2 = UserDraftPick(team=team2, year=year)
+            draft_team3 = UserDraftPick(team=team3, year=year)
+
+            db.session.add_all([draft_team1, draft_team2, draft_team3])
+            db.session.commit()
+
+            team1_record = Record()
