@@ -185,18 +185,84 @@ class TestStrengthOfScheduleRoutes:
     @pytest.fixture
     def sample_data(self):
         with app.app_context():
-            year = Year(year=2025)
+            week = Week(week_number=2)
+            week2 = Week(week_number=3)
+            year = Year(year=2026)
             team1 = Team(team_name="test1")
             team2 = Team(team_name="test2")
             team3 = Team(team_name="test3")
-            db.session.add_all([year, team1, team2, team3])
+            user1 = User(name="user1")
+            user2 = User(name="user2")
+            db.session.add_all([year, team1, team2, team3, user1, user2, week, week2])
             db.session.commit()
 
-            draft_team1 = UserDraftPick(team=team1, year=year)
-            draft_team2 = UserDraftPick(team=team2, year=year)
-            draft_team3 = UserDraftPick(team=team3, year=year)
+            draft_team1 = UserDraftPick(team=team1, year_id=year.id, user=user1)
+            draft_team2 = UserDraftPick(team=team2, year_id=year.id, user=user1)
+            draft_team3 = UserDraftPick(team=team3, year_id=year.id, user=user2)
 
             db.session.add_all([draft_team1, draft_team2, draft_team3])
             db.session.commit()
 
-            team1_record = Record()
+            team1_record = Record(
+                team=team1,
+                wins=2,
+                losses=4,
+                ties=0,
+                strength_of_schedule=0.456,
+                year_id=year.id,
+            )
+            team2_record = Record(
+                team=team2,
+                wins=6,
+                losses=4,
+                ties=1,
+                strength_of_schedule=0.667,
+                year_id=year.id,
+            )
+            team3_record = Record(
+                team=team3,
+                wins=11,
+                losses=5,
+                ties=0,
+                strength_of_schedule=0.125,
+                year_id=year.id,
+            )
+
+            db.session.add_all([team1_record, team2_record, team3_record])
+            db.session.commit()
+
+            week2_game = Game(
+                week=week, home_team=team1.id, away_team=team2.id, year_id=year.id
+            )
+            week3_game = Game(
+                week=week2, home_team=team2.id, away_team=team3.id, year_id=year.id
+            )
+
+            db.session.add_all([week2_game, week3_game])
+            db.session.commit()
+
+            yield {
+                "week": week,
+                "year": year,
+            }
+
+            db.session.query(User).delete()
+            db.session.query(Year).delete()
+            db.session.query(Week).delete()
+            db.session.query(UserDraftPick).delete()
+            db.session.query(Team).delete()
+            db.session.query(Record).delete()
+            db.session.query(Game).delete()
+            db.session.commit()
+
+    def test_get_strength_of_schedule(self, sample_data):
+        response = app.test_client().get(
+            f"/{sample_data['year'].year}/strength-of-schedule"
+        )
+        response_object = response.json
+
+        assert response.status_code == 200
+        assert len(response.json) == 3
+        assert response_object[0]["user"] == "user1"
+        assert response_object[1]["record"]["team"]["team_name"] == "test2"
+        assert response_object[2]["record"]["strength_of_schedule"] == "0.125"

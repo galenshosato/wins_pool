@@ -273,7 +273,7 @@ def get_strength_of_schedule_by_year(year):
     for userteam in userteams_in_pool:
         record = Record.query.filter_by(team_id=userteam.team_id).first()
         response = {"user": userteam.user.name, "record": record.to_dict()}
-        strength_of_schedule_response.add(response)
+        strength_of_schedule_response.append(response)
     return make_response(strength_of_schedule_response, 200)
 
 
