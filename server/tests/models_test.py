@@ -298,12 +298,14 @@ class TestWeeklyWin:
             db.session.add_all([user, year, week])
             db.session.commit()
 
-            weeklywin = WeeklyWin(week_id=week.id, wins=5)
+            weeklywin = WeeklyWin(week_id=week.id, wins=5, week=week, year=year)
             db.session.add(weeklywin)
             db.session.commit()
             weeklywin_dict = weeklywin.to_dict()
 
             assert weeklywin_dict["wins"] == 5
+            assert weeklywin_dict["year"] == 2023
+            assert weeklywin_dict["week"] == 1
 
             db.session.delete(weeklywin)
             db.session.delete(user)

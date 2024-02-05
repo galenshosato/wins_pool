@@ -24,6 +24,8 @@ app.secret_key = "woah that is a secret key"
 db.init_app(app)
 migrate.init_app(app, db)
 
+weekly_winner_array = []
+
 
 @app.route("/")
 def home():
@@ -252,16 +254,48 @@ def win_pool_by_year_and_user_id(year, id):
     return make_response(win_pool.to_dict(), 200)
 
 
+# This route returns all weekly win instances for a given week in a given year and creates the Weekly Win instances for a given week in a given year
+@app.route("/<int:year>/<int:week>/weekly-wins", methods=["GET", "POST"])
+def weekly_wins_by_year_and_week(year, week):
+    current_year = Year.query.filter_by(year=year).first()
+    current_week = Week.query.filter_by(week_number=week).first()
+    if request.method == "GET":
+        weekly_wins = WeeklyWin.query.filter_by(
+            year=current_year, week=current_week
+        ).all()
+        weekly_wins_to_dict = [weekly_win.to_dict() for weekly_win in weekly_wins]
+        return make_response(weekly_wins_to_dict, 200)
+    elif request.method == "POST":
+        users = User.query.filter(User.deleted == False).all()
+        for user in users:
+            new_weekly_win = WeeklyWin(user=user, week=current_week, year=current_year)
+            db.session.add(new_weekly_win)
+            db.session.commit()
+        return make_response(
+            {"Success": f"Weekly Wins created for Week {week} in Year {year}"}, 201
+        )
+    else:
+        return make_response({"Error": "Invalid Request Method"}, 500)
+
+
 # This route returns the weekly win instance for a given user, for a given week, in a given year
-@app.route("/<int:year>/<int:week>/<int:id>/weekly-wins")
+@app.route("/<int:year>/<int:week>/<int:id>/weekly-wins", methods=["GET", "PATCH"])
 def get_weekly_wins_by_year_week_user_id(year, week, id):
     current_year = Year.query.filter_by(year=year).first()
     current_week = Week.query.filter_by(week_number=week).first()
     current_user = User.query.filter_by(id=id).first()
-    weekly_win = WeeklyWin.query.filter_by(
-        user_id=current_user.id, week_id=current_week.id, year_id=current_year.id
-    ).first()
-    return make_response(weekly_win.to_dict(), 200)
+
+    if request.method == "GET":
+        weekly_win = WeeklyWin.query.filter_by(
+            user_id=current_user.id, week_id=current_week.id, year_id=current_year.id
+        ).first()
+        return make_response(weekly_win.to_dict(), 200)
+
+    elif request.method == "PATCH":
+        pass
+        # TODO: -Import get_winners_from_ESPN function and call it here to get the array of winning teams
+        #      - Move this PATCH to the route above, and update all USERs at the same time
+        #      - turn the array into a list of team ids, then find the team from UserDraftPick, if it's in the winner array, update the weekly win
 
 
 # Getting the team information for the admin SoS view by year
@@ -345,12 +379,12 @@ def update_strength_of_schedule(week, year):
         home_games = Game.query.filter(
             Game.home_team == team.id,
             Game.year_id == current_year.id,
-            Game.week >= current_week.week,
+            Game.week_id >= current_week.id,
         ).all()
         away_games = Game.query.filter(
             Game.away_team == team.id,
             Game.year_id == current_year.id,
-            Game.week >= current_week.week,
+            Game.week_id >= current_week.id,
         ).all()
         home_opponents = [opponent.away_team for opponent in home_games]
         away_opponents = [opponent.home_team for opponent in away_games]

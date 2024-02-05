@@ -206,7 +206,7 @@ class Game(db.Model):
         )
 
     def __repr__(self):
-        return f"<Game id={self.id}, home team = {self.get_team(self.home_team)['team_name']} away team = {self.get_team(self.away_team)['team_name']} time started = {self.timeStarted}"
+        return f"<Game id={self.id}, home team = {self.get_team(self.home_team)['team_name']} away team = {self.get_team(self.away_team)['team_name']} time started = {self.timeStarted} week = {self.week}>"
 
     def to_dict(self):
         return {
@@ -229,9 +229,11 @@ class WeeklyWin(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     year_id = db.Column(db.Integer, db.ForeignKey("years.id"))
     week_id = db.Column(db.Integer, db.ForeignKey("weeks.id"))
-    wins = db.Column(db.Integer)
+    wins = db.Column(db.Integer, default=0)
 
     week = db.relationship("Week", backref="weekly_win")
+    year = db.relationship("Year", backref="weekly_win")
+    user = db.relationship("User", backref="weekly_win")
 
     def __repr__(self):
         return f"<Wins For The Week: Week={self.week_number_id}, Wins={self.wins}>"
@@ -239,6 +241,8 @@ class WeeklyWin(db.Model):
     def to_dict(self):
         return {
             "id": self.id,
+            "user": self.user.name,
+            "year": self.year.year,
             "week": self.week.week_number,
             "wins": self.wins,
         }

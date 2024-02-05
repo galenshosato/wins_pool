@@ -1,6 +1,7 @@
 import pytest
 import sys
 from datetime import datetime
+from decimal import Decimal
 
 sys.path.append("/home/galensato/Development/code/coding-projects/wins_pool")
 
@@ -227,24 +228,20 @@ class TestStrengthOfScheduleRoutes:
                 strength_of_schedule=0.125,
                 year_id=year.id,
             )
-
-            db.session.add_all([team1_record, team2_record, team3_record])
-            db.session.commit()
-
             week2_game = Game(
                 week=week, home_team=team1.id, away_team=team2.id, year_id=year.id
             )
+
             week3_game = Game(
                 week=week2, home_team=team2.id, away_team=team3.id, year_id=year.id
             )
 
-            db.session.add_all([week2_game, week3_game])
+            db.session.add_all(
+                [team1_record, team2_record, team3_record, week2_game, week3_game]
+            )
             db.session.commit()
 
-            yield {
-                "week": week,
-                "year": year,
-            }
+            yield {"week": week, "year": year, "team2": team2}
 
             db.session.query(User).delete()
             db.session.query(Year).delete()
@@ -266,3 +263,24 @@ class TestStrengthOfScheduleRoutes:
         assert response_object[0]["user"] == "user1"
         assert response_object[1]["record"]["team"]["team_name"] == "test2"
         assert response_object[2]["record"]["strength_of_schedule"] == "0.125"
+
+    def test_update_strength_of_schedule(self, sample_data):
+        response = app.test_client().patch(
+            f"{sample_data['year'].year}/{sample_data['week'].week_number}/update-strength-of-schedule"
+        )
+
+        assert response.status_code == 201
+        assert (
+            response.json["Success"]
+            == "You have successfully updated the league's strength of schedule"
+        )
+
+        updated_record = Record.query.filter_by(team=sample_data["team2"]).first()
+
+        assert updated_record.wins == 6
+        assert updated_record.losses == 4
+        assert updated_record.ties == 1
+        assert updated_record.opponent_wins == 13
+        assert updated_record.opponent_losses == 9
+        assert updated_record.opponent_ties == 0
+        assert updated_record.strength_of_schedule == Decimal("0.591")
