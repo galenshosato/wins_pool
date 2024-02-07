@@ -13,6 +13,7 @@ from server import (
     Record,
     Game,
     calculate_strength_of_schedule,
+    get_winners_from_ESPN,
 )
 
 
@@ -23,8 +24,6 @@ app.json.compact = False
 app.secret_key = "woah that is a secret key"
 db.init_app(app)
 migrate.init_app(app, db)
-
-weekly_winner_array = []
 
 
 @app.route("/")
@@ -265,6 +264,13 @@ def weekly_wins_by_year_and_week(year, week):
         ).all()
         weekly_wins_to_dict = [weekly_win.to_dict() for weekly_win in weekly_wins]
         return make_response(weekly_wins_to_dict, 200)
+
+    elif request.method == "PATCH":
+        pass
+        # TODO: -Import get_winners_from_ESPN function and call it here to get the array of winning teams
+        #      - Move this PATCH to the route above, and update all USERs at the same time
+        #      - turn the array into a list of team ids, then find the team from UserDraftPick, if it's in the winner array, update the weekly win
+
     elif request.method == "POST":
         users = User.query.filter(User.deleted == False).all()
         for user in users:
@@ -279,23 +285,60 @@ def weekly_wins_by_year_and_week(year, week):
 
 
 # This route returns the weekly win instance for a given user, for a given week, in a given year
-@app.route("/<int:year>/<int:week>/<int:id>/weekly-wins", methods=["GET", "PATCH"])
+@app.route("/<int:year>/<int:week>/<int:id>/weekly-wins")
 def get_weekly_wins_by_year_week_user_id(year, week, id):
     current_year = Year.query.filter_by(year=year).first()
     current_week = Week.query.filter_by(week_number=week).first()
     current_user = User.query.filter_by(id=id).first()
+    weekly_win = WeeklyWin.query.filter_by(
+        user_id=current_user.id, week_id=current_week.id, year_id=current_year.id
+    ).first()
+    return make_response(weekly_win.to_dict(), 200)
 
-    if request.method == "GET":
-        weekly_win = WeeklyWin.query.filter_by(
-            user_id=current_user.id, week_id=current_week.id, year_id=current_year.id
-        ).first()
-        return make_response(weekly_win.to_dict(), 200)
 
-    elif request.method == "PATCH":
-        pass
-        # TODO: -Import get_winners_from_ESPN function and call it here to get the array of winning teams
-        #      - Move this PATCH to the route above, and update all USERs at the same time
-        #      - turn the array into a list of team ids, then find the team from UserDraftPick, if it's in the winner array, update the weekly win
+# This route will update the game instances with the winners of the week
+@app.route("/<int:year>/<int:week>/update-winners")
+def update_winners_for_week(year, week):
+    current_year = Year.query.filter_by(year=year).first()
+    current_week = Week.query.filter_by(week_number=week).first()
+    updates = 0
+
+    winner_array = []
+    weekly_winners = get_winners_from_ESPN(year, week)
+    # TODO: Adjust the code so that the winners are not saved in a global variable. Can either check if winner is not None
+    # The logic would be something along the lines of getting the game instance, and if the winner is None, then adding the winner and loser.
+    # If the instance winner is NOT None, then skip over
+    for winner_tuple in weekly_winners:
+        team_instance = Team.query.filter_by(team_name=winner_tuple[0]).first()
+        winner_tuple_id_home_away = (team_instance.id, winner_tuple[1])
+        winner_array.append(winner_tuple_id_home_away)
+
+    for adjusted_winner_tuple_id_home_away in winner_array:
+        id = adjusted_winner_tuple_id_home_away[0]
+        home_away_des = adjusted_winner_tuple_id_home_away[1]
+
+        if id not in weekly_winner_set:
+            if home_away_des == "home":
+                game = Game.query.filter(
+                    Game.home_team == id,
+                    Game.week_id == current_week.id,
+                    Game.year_id == current_year.id,
+                ).first()
+                game.winner = id
+                game.loser = game.away_team
+                db.session.add(game)
+                db.session.commit()
+            elif home_away_des == "away":
+                game = Game.query.filter(
+                    Game.away_team == id,
+                    Game.week_id == current_week.id,
+                    Game.year_id == current_year.id,
+                ).first()
+                game.winner = id
+                game.loser = game.home_team
+                db.session.add(game)
+                db.session.commit()
+            weekly_winner_set.add(id)
 
 
 # Getting the team information for the admin SoS view by year
@@ -312,7 +355,7 @@ def get_strength_of_schedule_by_year(year):
 
 
 # Route that updates the records at the end of the week. Theoretically, this will be a backend process prompted by a git action
-@app.route("/<int:year>/update-wins-week", methods=["PATCH"])
+@app.route("/<int:year>/update-records-for-week", methods=["PATCH"])
 def update_wins_for_week(year):
     week = Week.query.filter_by(isActive=True).first()
     year = Year.query.filter_by(year=year).first()
@@ -358,7 +401,9 @@ def update_wins_for_week(year):
         week.isActive = False
         db.session.add(week)
         db.session.commit()
-        return make_response({"Success": "You have updated this weeks winners"}, 200)
+        return make_response(
+            {"Success": "You have updated the records for this week"}, 200
+        )
     else:
         next_week = Week.query.filter_by(id=((week.id) + 1)).first()
         next_week.isActive = True
@@ -367,7 +412,9 @@ def update_wins_for_week(year):
         week.isActive = False
         db.session.add(week)
         db.session.commit()
-        return make_response({"Success": "You have updated this weeks winners"}, 200)
+        return make_response(
+            {"Success": "You have updated the records for this week"}, 200
+        )
 
 
 @app.route("/<int:year>/<int:week>/update-strength-of-schedule", methods=["PATCH"])

@@ -17,7 +17,8 @@
 
 --TODO--
   -Write a route that will update the weekly win for each user
-  -Write a route that will update the individual game instance, as well as the record for each team's instance
+  -Write a route that will update the individual game instance
+  -Look at an instance when there is a tie, and when would that be updated?
   -Write a unit test for the GET and POST request for /year/week/weekly-wins
   -Write a function that will update the wins for each week from the espn API.
     *Notes* You are thinking too far ahead. One step at a time. Break down each step that needs to happen, write each function, and then fine-tune it later

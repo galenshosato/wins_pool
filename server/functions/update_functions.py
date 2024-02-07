@@ -21,5 +21,7 @@ def get_winners_from_ESPN(year, week):
         for team in teams:
             if team["winner"] == True:
                 name = team["team"]["name"]
-                winner_array.append(name)
+                home_away_designation = team["homeAway"]
+                winner_tuple = (name, home_away_designation)
+                winner_array.append(winner_tuple)
     return winner_array
