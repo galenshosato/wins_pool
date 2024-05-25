@@ -14,28 +14,13 @@ public class User {
 
     private String password;
 
-    private String favoriteTeam;
-
     private boolean deleted;
 
     private boolean isAdmin;
 
     private BigDecimal moneyOwed;
 
-    public User() {
-    }
-
-    public User(int userId, String firstName, String lastName, String email, String password, String favoriteTeam, boolean deleted, boolean isAdmin, BigDecimal moneyOwed) {
-        this.userId = userId;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.password = password;
-        this.favoriteTeam = favoriteTeam;
-        this.deleted = deleted;
-        this.isAdmin = isAdmin;
-        this.moneyOwed = moneyOwed;
-    }
+    private Team favoriteTeam;
 
     public int getUserId() {
         return userId;
@@ -77,11 +62,11 @@ public class User {
         this.password = password;
     }
 
-    public String getFavoriteTeam() {
+    public Team getFavoriteTeam() {
         return favoriteTeam;
     }
 
-    public void setFavoriteTeam(String favoriteTeam) {
+    public void setFavoriteTeam(Team favoriteTeam) {
         this.favoriteTeam = favoriteTeam;
     }
 

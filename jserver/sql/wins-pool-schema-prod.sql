@@ -26,9 +26,10 @@ create table year (
 
 create table team (
 	team_id int primary key auto_increment,
-    team_name varchar(100) not null,
-    color varchar(50) not null,
-    alt_color varchar(50) not null
+	location varchar(100) not null,
+    team_name varchar(50) not null,
+    color varchar(15) not null,
+    alt_color varchar(15) not null
 );
 
 create table draft_pick(
