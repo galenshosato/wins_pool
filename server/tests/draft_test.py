@@ -162,7 +162,7 @@ class TestTeamAssignments:
     def sample_data(self):
         with app.app_context():
             user = User(name="galen")
-            year = Year(year=2023)
+            year = Year(year=2025)
             draft_pick_1 = DraftPick(pick_number=1)
             draft_pick_5 = DraftPick(pick_number=5)
 
@@ -205,6 +205,8 @@ class TestTeamAssignments:
             db.session.delete(draft_pick_5)
             db.session.delete(team1)
             db.session.delete(team2)
+            db.session.query(UserDraftPick).delete()
+            db.session.query(Year).delete()
 
             db.session.commit()
 
@@ -221,7 +223,13 @@ class TestTeamAssignments:
             "teamId": sample_data["team2"].id,
         }
 
+        draft_test = UserDraftPick.query.filter_by(
+            user_id=user.id, year_id=year.id
+        ).first()
+
         response1 = app.test_client().patch(f"/{year.year}/{user.id}/teams", json=data1)
+
+        print(response1.json)
 
         assert response1.status_code == 200
         assert (

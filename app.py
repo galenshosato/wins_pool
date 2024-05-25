@@ -11,6 +11,9 @@ from server import (
     WinPool,
     WeeklyWin,
     Record,
+    Game,
+    calculate_strength_of_schedule,
+    get_winners_from_ESPN,
 )
 
 
@@ -46,13 +49,21 @@ def users():
             or "name" not in data
             or "email" not in data
             or "password" not in data
+            or "favorite_team" not in data
         ):
             return make_response({"error": "Invalid JSON data"}, 400)
 
         name = data.get("name")
         email = data.get("email")
         password = data.get("password")
-        new_user = User(name=name, email=email, password=password, money_owed=0.00)
+        favorite_team = data.get("favorite_team")
+        new_user = User(
+            name=name,
+            email=email,
+            password=password,
+            money_owed=0.00,
+            favorite_team=favorite_team,
+        )
         db.session.add(new_user)
         db.session.commit()
 
@@ -186,6 +197,9 @@ def teams_by_user_id_and_year(year, id):
 
             draft_id = data.get("draftId")
             team_id = data.get("teamId")
+            print("Draft Id is: ", draft_id)
+            print("Team Id is: ", team_id)
+            print("User Id is: ", user.id)
 
             # Check if team exists
             team = Team.query.filter_by(id=team_id).first()
@@ -197,6 +211,7 @@ def teams_by_user_id_and_year(year, id):
             user_pick = UserDraftPick.query.filter_by(
                 user_id=user.id, year_id=draft_year.id, draft_pick_id=draft_id
             ).first()
+            print(UserDraftPick.query.all())
             if not user_pick:
                 return make_response({"error": "UserDraftPick object not found"}, 404)
 
@@ -220,6 +235,7 @@ def teams_by_user_id_and_year(year, id):
 
 
 # Routes for Wins Pool
+# This gives you all of the wins-pool instances for a given year
 @app.route("/<int:year>/wins-pool")
 def wins_pool_by_year(year):
     year = Year.query.filter_by(year=year).first()
@@ -228,14 +244,47 @@ def wins_pool_by_year(year):
     return make_response(wins_pools_to_dict, 200)
 
 
+# This route returns the win-pool for a given year and given user
 @app.route("/<int:year>/<int:id>/wins-pool")
 def win_pool_by_year_and_user_id(year, id):
     current_year = Year.query.filter_by(year=year).first()
     user = User.query.filter_by(id=id).first()
-    win_pool = WinPool.query.filter_by(user_id=user.id, year_id=current_year).first()
+    win_pool = WinPool.query.filter_by(user_id=user.id, year_id=current_year.id).first()
     return make_response(win_pool.to_dict(), 200)
 
 
+# This route returns all weekly win instances for a given week in a given year and creates the Weekly Win instances for a given week in a given year
+@app.route("/<int:year>/<int:week>/weekly-wins", methods=["GET", "POST"])
+def weekly_wins_by_year_and_week(year, week):
+    current_year = Year.query.filter_by(year=year).first()
+    current_week = Week.query.filter_by(week_number=week).first()
+    if request.method == "GET":
+        weekly_wins = WeeklyWin.query.filter_by(
+            year=current_year, week=current_week
+        ).all()
+        weekly_wins_to_dict = [weekly_win.to_dict() for weekly_win in weekly_wins]
+        return make_response(weekly_wins_to_dict, 200)
+
+    elif request.method == "PATCH":
+        pass
+        # TODO: -Import get_winners_from_ESPN function and call it here to get the array of winning teams
+        #      - Move this PATCH to the route above, and update all USERs at the same time
+        #      - turn the array into a list of team ids, then find the team from UserDraftPick, if it's in the winner array, update the weekly win
+
+    elif request.method == "POST":
+        users = User.query.filter(User.deleted == False).all()
+        for user in users:
+            new_weekly_win = WeeklyWin(user=user, week=current_week, year=current_year)
+            db.session.add(new_weekly_win)
+            db.session.commit()
+        return make_response(
+            {"Success": f"Weekly Wins created for Week {week} in Year {year}"}, 201
+        )
+    else:
+        return make_response({"Error": "Invalid Request Method"}, 500)
+
+
+# This route returns the weekly win instance for a given user, for a given week, in a given year
 @app.route("/<int:year>/<int:week>/<int:id>/weekly-wins")
 def get_weekly_wins_by_year_week_user_id(year, week, id):
     current_year = Year.query.filter_by(year=year).first()
@@ -245,6 +294,178 @@ def get_weekly_wins_by_year_week_user_id(year, week, id):
         user_id=current_user.id, week_id=current_week.id, year_id=current_year.id
     ).first()
     return make_response(weekly_win.to_dict(), 200)
+
+
+# This route will update the game instances with the winners of the week
+@app.route("/<int:year>/<int:week>/update-winners")
+def update_winners_for_week(year, week):
+    current_year = Year.query.filter_by(year=year).first()
+    current_week = Week.query.filter_by(week_number=week).first()
+    updates = 0
+
+    winner_array = []
+    weekly_winners = get_winners_from_ESPN(year, week)
+    # TODO: Adjust the code so that the winners are not saved in a global variable. Can either check if winner is not None
+    # The logic would be something along the lines of getting the game instance, and if the winner is None, then adding the winner and loser.
+    # If the instance winner is NOT None, then skip over
+    for winner_tuple in weekly_winners:
+        team_instance = Team.query.filter_by(team_name=winner_tuple[0]).first()
+        winner_tuple_id_home_away = (team_instance.id, winner_tuple[1])
+        winner_array.append(winner_tuple_id_home_away)
+
+    for adjusted_winner_tuple_id_home_away in winner_array:
+        id = adjusted_winner_tuple_id_home_away[0]
+        home_away_des = adjusted_winner_tuple_id_home_away[1]
+
+        if id not in weekly_winner_set:
+            if home_away_des == "home":
+                game = Game.query.filter(
+                    Game.home_team == id,
+                    Game.week_id == current_week.id,
+                    Game.year_id == current_year.id,
+                ).first()
+                game.winner = id
+                game.loser = game.away_team
+                db.session.add(game)
+                db.session.commit()
+            elif home_away_des == "away":
+                game = Game.query.filter(
+                    Game.away_team == id,
+                    Game.week_id == current_week.id,
+                    Game.year_id == current_year.id,
+                ).first()
+                game.winner = id
+                game.loser = game.home_team
+                db.session.add(game)
+                db.session.commit()
+            weekly_winner_set.add(id)
+
+
+# Getting the team information for the admin SoS view by year
+@app.route("/<int:year>/strength-of-schedule")
+def get_strength_of_schedule_by_year(year):
+    current_year = Year.query.filter_by(year=year).first()
+    userteams_in_pool = UserDraftPick.query.filter_by(year_id=current_year.id).all()
+    strength_of_schedule_response = []
+    for userteam in userteams_in_pool:
+        record = Record.query.filter_by(team_id=userteam.team_id).first()
+        response = {"user": userteam.user.name, "record": record.to_dict()}
+        strength_of_schedule_response.append(response)
+    return make_response(strength_of_schedule_response, 200)
+
+
+# Route that updates the records at the end of the week. Theoretically, this will be a backend process prompted by a git action
+@app.route("/<int:year>/update-records-for-week", methods=["PATCH"])
+def update_wins_for_week(year):
+    week = Week.query.filter_by(isActive=True).first()
+    year = Year.query.filter_by(year=year).first()
+    games = Game.query.filter_by(week_id=week.id).all()
+    tie = []
+    for game in games:
+        if game.isTie == True:
+            tie.append(game.home_team)
+            tie.append(game.away_team)
+    if len(tie) > 1:
+        for tying_team_id in tie:
+            tying_team_record = Record.query.filter_by(
+                team_id=tying_team_id, year_id=year.id
+            ).first()
+            tying_team_record.ties += 1
+            db.session.add(tying_team_record)
+            db.session.commit()
+
+    winners = [game.winner for game in games if game.winner is not None]
+    losers = [game.loser for game in games if game.loser is not None]
+
+    for winning_team_id in winners:
+        winning_team_record = Record.query.filter_by(
+            team_id=winning_team_id, year_id=year.id
+        ).first()
+        winning_team_record.wins += 1
+        db.session.add(winning_team_record)
+        db.session.commit()
+
+    for losing_team_id in losers:
+        losing_team_record = Record.query.filter_by(
+            team_id=losing_team_id, year_id=year.id
+        ).first()
+        losing_team_record.losses += 1
+        db.session.add(losing_team_record)
+        db.session.commit()
+
+    if week.week_number == 18:
+        next_week = Week.query.filter_by(week_number=1).first()
+        next_week.isActive = True
+        db.session.add(next_week)
+        db.session.commit()
+        week.isActive = False
+        db.session.add(week)
+        db.session.commit()
+        return make_response(
+            {"Success": "You have updated the records for this week"}, 200
+        )
+    else:
+        next_week = Week.query.filter_by(id=((week.id) + 1)).first()
+        next_week.isActive = True
+        db.session.add(next_week)
+        db.session.commit()
+        week.isActive = False
+        db.session.add(week)
+        db.session.commit()
+        return make_response(
+            {"Success": "You have updated the records for this week"}, 200
+        )
+
+
+@app.route("/<int:year>/<int:week>/update-strength-of-schedule", methods=["PATCH"])
+def update_strength_of_schedule(week, year):
+    current_week = Week.query.filter_by(week_number=week).first()
+    current_year = Year.query.filter_by(year=year).first()
+    teams = Team.query.all()
+    for team in teams:
+        home_games = Game.query.filter(
+            Game.home_team == team.id,
+            Game.year_id == current_year.id,
+            Game.week_id >= current_week.id,
+        ).all()
+        away_games = Game.query.filter(
+            Game.away_team == team.id,
+            Game.year_id == current_year.id,
+            Game.week_id >= current_week.id,
+        ).all()
+        home_opponents = [opponent.away_team for opponent in home_games]
+        away_opponents = [opponent.home_team for opponent in away_games]
+        all_opponents = home_opponents + away_opponents
+
+        total_opponent_wins = 0
+        total_opponent_losses = 0
+        total_opponent_ties = 0
+
+        for opponent_id in all_opponents:
+            opponent_record = Record.query.filter_by(
+                team_id=opponent_id, year_id=current_year.id
+            ).first()
+            total_opponent_wins += opponent_record.wins
+            total_opponent_losses += opponent_record.losses
+            total_opponent_ties += opponent_record.ties
+
+        team_record = Record.query.filter_by(
+            team_id=team.id, year_id=current_year.id
+        ).first()
+        team_record.opponent_wins = total_opponent_wins
+        team_record.opponent_losses = total_opponent_losses
+        team_record.opponent_ties = total_opponent_ties
+
+        strength_of_schedule = calculate_strength_of_schedule(
+            total_opponent_wins, total_opponent_losses, total_opponent_ties
+        )
+        team_record.strength_of_schedule = strength_of_schedule
+        db.session.add(team_record)
+        db.session.commit()
+    return make_response(
+        {"Success": "You have successfully updated the league's strength of schedule"},
+        201,
+    )
 
 
 if __name__ == "__main__":
