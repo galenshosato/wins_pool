@@ -4,6 +4,15 @@ use wins_pool;
 
 -- create tables and relationships
 
+create table team (
+	team_id int primary key auto_increment,
+	location varchar(100) not null,
+    team_name varchar(50) not null,
+    color varchar(15) not null,
+    alt_color varchar(15) not null,
+    league varchar(15) null
+);
+
 create table user (
 	user_id int primary key auto_increment,
     first_name varchar(25) not null,
@@ -24,13 +33,6 @@ create table year (
     year_number int not null unique
 );
 
-create table team (
-	team_id int primary key auto_increment,
-	location varchar(100) not null,
-    team_name varchar(50) not null,
-    color varchar(15) not null,
-    alt_color varchar(15) not null
-);
 
 create table draft_pick(
 	draft_pick_id int primary key auto_increment,

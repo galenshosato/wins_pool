@@ -12,6 +12,8 @@ public class Team {
 
     private String altColor;
 
+    private String league;
+
     public int getTeamId() {
         return teamId;
     }
@@ -50,5 +52,13 @@ public class Team {
 
     public void setAltColor(String altColor) {
         this.altColor = altColor;
+    }
+
+    public String getLeague() {
+        return league;
+    }
+
+    public void setLeague(String league) {
+        this.league = league;
     }
 }

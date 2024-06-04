@@ -4,6 +4,15 @@ use wins_pool_test;
 
 -- create tables and relationships
 
+create table team (
+	team_id int primary key auto_increment,
+	location varchar(100) not null,
+    team_name varchar(50) not null,
+    color varchar(15) not null,
+    alt_color varchar(15) not null,
+    league varchar(15) null
+);
+
 create table user (
 	user_id int primary key auto_increment,
     first_name varchar(25) not null,
@@ -24,13 +33,6 @@ create table year (
     year_number int not null unique
 );
 
-create table team (
-	team_id int primary key auto_increment,
-	location varchar(100) not null,
-    team_name varchar(50) not null,
-    color varchar(15) not null,
-    alt_color varchar(15) not null
-);
 
 create table draft_pick(
 	draft_pick_id int primary key auto_increment,
@@ -74,12 +76,14 @@ begin
 
     insert into year(year_id, year_number) values
         (1, 2023),
-        (2, 2024);
+        (2, 2024),
+        (3, 2025);
 
-    insert into team (team_id, location, team_name, color, alt_color) values
-        (1, 'San Francisco', '49ers', 'red', 'gold'),
-        (2, 'New England', 'Patriots', 'blue', 'white'),
-        (3, 'Chicago', 'Bears', 'blue', 'gold');
+    insert into team (team_id, location, team_name, color, alt_color, league) values
+        (1, 'San Francisco', '49ers', 'red', 'gold', 'NFC'),
+        (2, 'New England', 'Patriots', 'blue', 'white', 'AFC'),
+        (3, 'Chicago', 'Bears', 'blue', 'gold', 'NFC'),
+        (4, 'Denver', 'Broncos', 'blue', 'orange', null);
 
     insert into draft_pick (draft_pick_id, pick_number) values
         (1,1),

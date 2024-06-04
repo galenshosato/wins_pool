@@ -17,6 +17,7 @@ public class TeamMapper implements RowMapper<Team> {
         team.setTeamName(resultSet.getString("team_name"));
         team.setColor(resultSet.getString("color"));
         team.setAltColor(resultSet.getString("alt_color"));
+        team.setLeague(resultSet.getString("league"));
         return team;
     }
 }
