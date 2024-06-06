@@ -15,7 +15,11 @@ public class UserMapper implements RowMapper<User> {
         user.setFirstName(resultSet.getString("first_name"));
         user.setLastName(resultSet.getString("last_name"));
         user.setEmail(resultSet.getString("email"));
-        user.setPassword(resultSet.getString("password"));
+        try {
+            user.setPassword(resultSet.getString("password"));
+        } catch (SQLException e) {
+            user.setPassword(null);  // password not requested
+        }
         user.setDeleted(resultSet.getBoolean("is_deleted"));
         user.setAdmin(resultSet.getBoolean("is_admin"));
         user.setMoneyOwed(resultSet.getBigDecimal("money_owed"));

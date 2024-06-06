@@ -17,14 +17,14 @@ public class UserJdbcTemplateRepository {
     }
 
     public List<User> findAllUsers() {
-        final String sql = "select user_id, first_name, last_name, email, password, is_deleted, is_admin, money_owed, team_id from user;";
+        final String sql = "select user_id, first_name, last_name, email, is_deleted, is_admin, money_owed, team_id from user;";
         return jdbcTemplate.query(sql, new UserMapper());
     }
 
     public List<User> findAllCurrentUsers() {
-        final String sql = "select user_id, first_name, last_name, email, password, is_deleted, is_admin, money_owed, team_id from user where is_deleted = 1;";
+        final String sql = "select user_id, first_name, last_name, email, is_deleted, is_admin, money_owed, team_id from user where is_deleted = 1;";
         return jdbcTemplate.query(sql, new UserMapper());
     }
 
-    
+
 }
