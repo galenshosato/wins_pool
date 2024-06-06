@@ -20,9 +20,6 @@ public class UserMapper implements RowMapper<User> {
         user.setAdmin(resultSet.getBoolean("is_admin"));
         user.setMoneyOwed(resultSet.getBigDecimal("money_owed"));
 
-        TeamMapper teamMapper = new TeamMapper();
-        user.setFavoriteTeam(teamMapper.mapRow(resultSet,i));
-
         return user;
     }
 }
