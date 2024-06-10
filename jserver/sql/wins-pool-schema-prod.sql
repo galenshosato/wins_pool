@@ -18,10 +18,10 @@ create table user (
     first_name varchar(25) not null,
     last_name varchar(50) not null,
     email varchar(250) not null unique,
-    `password` varchar(250) not null unique,
+    `password` varchar(250) not null,
     is_deleted bit not null default 0,
-    is_admin bit not null default 1,
-    money_owed decimal(10,2) not null,
+    is_admin bit not null default 0,
+    money_owed decimal(10,2) not null default 0.00,
     team_id int not null,
     constraint fk_user_team_id
         foreign key (team_id)

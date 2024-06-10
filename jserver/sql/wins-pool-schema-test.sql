@@ -18,10 +18,10 @@ create table user (
     first_name varchar(25) not null,
     last_name varchar(50) not null,
     email varchar(250) not null unique,
-    `password` varchar(250) not null unique,
-    is_deleted bit not null default 1,
-    is_admin bit not null default 1,
-    money_owed decimal(10,2) not null,
+    `password` varchar(250) not null,
+    is_deleted bit not null default 0,
+    is_admin bit not null default 0,
+    money_owed decimal(10,2) not null default 0.00,
     team_id int not null,
     constraint fk_user_team_id
         foreign key (team_id)
@@ -92,10 +92,10 @@ begin
         (4,4),
         (5,5);
 
-    insert into user (user_id, first_name, last_name, email, password, is_deleted, is_admin, money_owed, team_id ) values
-        (1, 'Luke', 'Skywalker', 'lastjedi@lightside.com', 'yodayomama', 1, 0, 0.00, 1),
-        (2, 'Cal', 'Kestis', 'survivor@lightside.com', 'redheadjedhead', 1, 1, 0.00, 2),
-        (3, 'Anakin', 'Skywalker', 'darthvader@sith.com', 'iamyourfather', 0, 1, 0.00, 3);
+    insert into user (user_id, first_name, last_name, email, `password`, is_deleted, is_admin, money_owed, team_id ) values
+        (1, 'Luke', 'Skywalker', 'lastjedi@lightside.com', 'yodayomama', 0, 1, 0.00, 1),
+        (2, 'Cal', 'Kestis', 'survivor@lightside.com', 'redheadjedhead', 0, 0, 0.00, 2),
+        (3, 'Anakin', 'Skywalker', 'darthvader@sith.com', 'iamyourfather', 1, 0, 0.00, 3);
 
     insert into draft (draft_id, user_id, year_id, draft_pick_id, team_id) values
         (1, 1, 1, 1, 2),
