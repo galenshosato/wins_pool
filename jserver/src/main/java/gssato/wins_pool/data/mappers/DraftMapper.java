@@ -24,7 +24,12 @@ public class DraftMapper implements RowMapper<Draft> {
         draft.setDraftPick(draftPickMapper.mapRow(resultSet, i));
 
         TeamMapper teamMapper = new TeamMapper();
-        draft.setTeam(teamMapper.mapRow(resultSet, i));
+        try {
+            draft.setTeam(teamMapper.mapRow(resultSet, i));
+        } catch (SQLException ex) {
+            draft.setTeam(null);
+        }
+
 
         return draft;
     }

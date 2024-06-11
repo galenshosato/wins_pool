@@ -2,7 +2,6 @@ package gssato.wins_pool.data;
 
 import gssato.wins_pool.data.mappers.TeamMapper;
 import gssato.wins_pool.data.mappers.UserMapper;
-import gssato.wins_pool.data.util.PasswordUtils;
 import gssato.wins_pool.models.User;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -10,13 +9,12 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.List;
 
 @Repository
-public class UserJdbcTemplateRepository {
+public class UserJdbcTemplateRepository implements UserRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -24,16 +22,19 @@ public class UserJdbcTemplateRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    @Override
     public List<User> findAllUsers() {
         final String sql = "select user_id, first_name, last_name, email, is_deleted, is_admin, money_owed, team_id from user;";
         return jdbcTemplate.query(sql, new UserMapper());
     }
 
+    @Override
     public List<User> findAllCurrentUsers() {
         final String sql = "select user_id, first_name, last_name, email, is_deleted, is_admin, money_owed, team_id from user where is_deleted = 0;";
         return jdbcTemplate.query(sql, new UserMapper());
     }
 
+    @Override
     @Transactional
     public User findUserByEmail(String email) {
         final String sql = "select user_id, first_name, last_name, email, password, is_deleted, is_admin, money_owed, team_id from user where email = ?;";
@@ -45,6 +46,7 @@ public class UserJdbcTemplateRepository {
         return result;
     }
 
+    @Override
     public User addUser(User user) {
         final String sql = "insert into user (first_name, last_name, email, password, team_id) "
                 + "values (?,?,?,?,?);";
@@ -67,6 +69,34 @@ public class UserJdbcTemplateRepository {
 
         user.setUserId(keyHolder.getKey().intValue());
         return user;
+    }
+
+    @Override
+    public boolean updateUser(User user) {
+        final String sql = "update user set "
+                + "first_name = ?, "
+                + "last_name = ?, "
+                + "email = ?, "
+                + "password = ?, "
+                + "money_owed = ?, "
+                + "team_id = ? "
+                + "where user_id = ?;";
+        return jdbcTemplate.update(sql,
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getPassword(),
+                user.getMoneyOwed(),
+                user.getFavoriteTeam().getTeamId(),
+                user.getUserId()) > 0;
+    }
+
+    @Override
+    public boolean deleteUser(User user) {
+        final String sql = "update user set "
+                + "is_deleted = 1 "
+                + "where user_id = ?;";
+        return jdbcTemplate.update(sql, user.getUserId()) > 0;
     }
 
 

@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class UserJdbcTemplateRepositoryTest {
 
     @Autowired
-    UserJdbcTemplateRepository repository;
+    UserRepository repository;
 
     @Autowired
     KnownGoodState knownGoodState;
@@ -67,13 +67,92 @@ class UserJdbcTemplateRepositoryTest {
         User result = repository.addUser(user);
         assertNotNull(result);
 
-        assertEquals(4, result.getUserId());
+        assertEquals(5, result.getUserId());
 
         User asokha = repository.findUserByEmail("apprentice@gmail.com");
         assertNotNull(asokha);
         assertFalse(asokha.isDeleted());
         assertFalse(asokha.isAdmin());
         assertEquals(0, BigDecimal.valueOf(0.00).compareTo(asokha.getMoneyOwed()));
+    }
+
+    @Test
+    void shouldUpdateUser() {
+        User before = repository.findUserByEmail("darthvader@sith.com");
+        assertEquals("Anakin", before.getFirstName());
+        assertEquals("Skywalker", before.getLastName());
+
+        User user = new User();
+        Team favTeam = new Team();
+        favTeam.setTeamId(3);
+        user.setFirstName("Darth");
+        user.setLastName("Vader");
+        user.setEmail("darthvader@sith.com");
+        user.setPassword("iamyourfather");
+        user.setDeleted(true);
+        user.setAdmin(false);
+        user.setUserId(3);
+        user.setMoneyOwed(BigDecimal.valueOf(0.00));
+        user.setFavoriteTeam(favTeam);
+        assertTrue(repository.updateUser(user));
+
+        User actual = repository.findUserByEmail("darthvader@sith.com");
+        assertEquals("Darth", actual.getFirstName());
+        assertEquals("Vader", actual.getLastName());
+
+    }
+
+    @Test
+    void shouldNotUpdateIdNotFound() {
+        User user = new User();
+        Team favTeam = new Team();
+        favTeam.setTeamId(3);
+        user.setFirstName("Darth");
+        user.setLastName("Vader");
+        user.setEmail("darthvader@sith.com");
+        user.setPassword("iamyourfather");
+        user.setDeleted(true);
+        user.setAdmin(false);
+        user.setUserId(20);
+        user.setMoneyOwed(BigDecimal.valueOf(0.00));
+        user.setFavoriteTeam(favTeam);
+        assertFalse(repository.updateUser(user));
+    }
+
+    @Test
+    void shouldChangeIsDeletedTag() {
+        User user = new User();
+        Team favTeam = new Team();
+        favTeam.setTeamId(2);
+        user.setFirstName("Ben");
+        user.setLastName("Solo");
+        user.setEmail("soloapprentice@gmail.com");
+        user.setPassword("ikilledMyFather");
+        user.setFavoriteTeam(favTeam);
+
+        User result = repository.addUser(user);
+        assertNotNull(result);
+        assertFalse(result.isDeleted());
+
+        assertTrue(repository.deleteUser(result));
+        User deleteResult = repository.findUserByEmail("soloapprentice@gmail.com");
+        assertTrue(deleteResult.isDeleted());
+
+    }
+
+    @Test
+    void shouldNotDeleteInvalidId() {
+        User user = new User();
+        Team favTeam = new Team();
+        favTeam.setTeamId(2);
+        user.setFirstName("Ben");
+        user.setLastName("Solo");
+        user.setEmail("soloapprentice@gmail.com");
+        user.setPassword("ikilledMyFather");
+        user.setFavoriteTeam(favTeam);
+        user.setUserId(20);
+
+        assertFalse(repository.deleteUser(user));
     }
 
 }

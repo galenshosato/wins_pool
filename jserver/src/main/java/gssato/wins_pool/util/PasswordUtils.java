@@ -1,4 +1,4 @@
-package gssato.wins_pool.data.util;
+package gssato.wins_pool.util;
 
 
 import org.mindrot.jbcrypt.BCrypt;

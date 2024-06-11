@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -52,6 +53,7 @@ public class DraftPickJdbcTemplateRepository implements DraftPickRepository {
     }
 
     @Override
+    @Transactional
     public boolean deleteByDraftPickId(int draftPickId) {
         jdbcTemplate.update("delete from draft where draft_pick_id = ?;", draftPickId);
         return jdbcTemplate.update("delete from draft_pick where draft_pick_id = ?;", draftPickId) > 0;

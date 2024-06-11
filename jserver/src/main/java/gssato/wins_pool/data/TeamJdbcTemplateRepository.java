@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -89,6 +90,7 @@ public class TeamJdbcTemplateRepository implements TeamRepository {
     }
 
     @Override
+    @Transactional
     public boolean deleteTeamById(int teamId) {
         jdbcTemplate.update("delete from draft where team_id = ?;", teamId);
         jdbcTemplate.update("delete from user where team_id = ?;", teamId);
