@@ -1,6 +1,6 @@
 package gssato.wins_pool.data;
 
-import gssato.wins_pool.models.Draft;
+import gssato.wins_pool.models.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DraftJdbcTemplateRepositoryTest {
 
     @Autowired
-    DraftJdbcTemplateRepository repository;
+    DraftRepository repository;
 
     @Autowired
     KnownGoodState knownGoodState;
@@ -61,5 +61,44 @@ class DraftJdbcTemplateRepositoryTest {
         assertEquals(2, calPicks.get(0).getDraftPick().getPickNumber());
         assertEquals(3, calPicks.get(1).getDraftPick().getPickNumber());
     }
+
+    @Test
+    void shouldCreateNewDraft() {
+        User user = new User();
+        user.setUserId(3);
+        Year year = new Year();
+        year.setYearId(2);
+        DraftPick draftPick = new DraftPick();
+        draftPick.setDraftPickId(5);
+
+
+        Draft draft = new Draft();
+        draft.setUser(user);
+        draft.setYear(year);
+        draft.setDraftPick(draftPick);
+
+        Draft actual = repository.createDraftPick(draft);
+        assertNotNull(actual);
+        assertEquals(6, actual.getDraftId());
+        assertEquals(3, actual.getUser().getUserId());
+        assertEquals(2, actual.getYear().getYearId());
+        assertEquals(5, actual.getDraftPick().getDraftPickId());
+        assertNull(actual.getTeam());
+
+    }
+
+    @Test
+    void shouldUpdateDraftPickWithTeam() {
+        Team team = new Team();
+        team.setTeamId(3);
+        List<Draft> draftObjects = repository.findAllDraftPicksByYear(2024);
+        Draft draft = draftObjects.get(1);
+        assertNull(draft.getTeam());
+        draft.setTeam(team);
+        assertTrue(repository.updateDraftPickWithTeam(draft));
+        draftObjects = repository.findAllDraftPicksByYear(2024);
+        assertEquals(3,draftObjects.get(1).getTeam().getTeamId());
+    }
+
 
 }
