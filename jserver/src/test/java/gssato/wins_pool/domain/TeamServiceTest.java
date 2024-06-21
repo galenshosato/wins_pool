@@ -8,7 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
+
 import static org.mockito.Mockito.when;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class TeamServiceTest {
@@ -70,6 +70,60 @@ class TeamServiceTest {
         assertEquals(ResultType.SUCCESS, actual.getType());
         assertEquals(mockTeam, actual.getPayload());
     }
+
+    @Test
+    void shouldNotUpdateWhenInvalid() {
+        Team team = makeTeam();
+        Result<Team> actual = service.updateTeam(team);
+        assertEquals(ResultType.INVALID, actual.getType());
+
+        team = makeTeam();
+        team.setTeamId(1);
+        team.setLocation(null);
+        actual = service.updateTeam(team);
+        assertEquals(ResultType.INVALID, actual.getType());
+
+        team = makeTeam();
+        team.setTeamId(1);
+        team.setTeamName("");
+        actual = service.updateTeam(team);
+        assertEquals(ResultType.INVALID, actual.getType());
+
+        team = makeTeam();
+        team.setTeamId(1);
+        team.setColor("     ");
+        actual = service.updateTeam(team);
+        assertEquals(ResultType.INVALID, actual.getType());
+
+        team = makeTeam();
+        team.setTeamId(1);
+        team.setAltColor(null);
+        actual = service.updateTeam(team);
+        assertEquals(ResultType.INVALID, actual.getType());
+    }
+
+    @Test
+    void shouldNotUpdateWhenInvalidId() {
+        Team team = makeTeam();
+        team.setTeamId(50);
+
+        when(repository.updateTeam(team)).thenReturn(false);
+        Result<Team> actual = service.updateTeam(team);
+        assertEquals(ResultType.NOT_FOUND, actual.getType());
+    }
+
+    @Test
+    void shouldNotDeleteWhenNotFound() {
+        when(repository.deleteTeamById(4)).thenReturn(false);
+        assertFalse(service.deleteById(4));
+    }
+
+    @Test
+    void shouldDelete() {
+        when(repository.deleteTeamById(1)).thenReturn(true);
+        assertTrue(service.deleteById(1));
+    }
+
 
     Team makeTeam() {
         Team team = new Team();

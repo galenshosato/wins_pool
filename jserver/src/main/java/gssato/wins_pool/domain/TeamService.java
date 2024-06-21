@@ -42,6 +42,27 @@ public class TeamService {
         return result;
     }
 
+    public Result<Team> updateTeam(Team team) {
+        Result<Team> result = validate(team);
+        if (!result.isSuccess()) {
+            return result;
+        }
+
+        if (team.getTeamId() <= 0) {
+            result.addMessage("The team's id must be set for the `update` operation", ResultType.INVALID);
+            return result;
+        }
+
+        if (!repository.updateTeam(team)) {
+            String msg = String.format("teamId: %s was not found", team.getTeamId());
+            result.addMessage(msg, ResultType.NOT_FOUND);
+        }
+
+        return result;
+    }
+
+    public boolean deleteById(int teamId) { return repository.deleteTeamById(teamId);}
+
     private Result<Team> validate(Team team) {
         Result<Team> result = new Result<>();
 
