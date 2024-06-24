@@ -85,7 +85,7 @@ class YearServiceTest {
         assertEquals(ResultType.SUCCESS, actual.getType());
     }
 
-    private Year makeYear() {
+    Year makeYear() {
         Year year = new Year();
         year.setYearNumber(2024);
         return year;
