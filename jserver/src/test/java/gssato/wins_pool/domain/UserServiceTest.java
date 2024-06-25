@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
+import java.awt.geom.RectangularShape;
 import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -131,6 +132,84 @@ class UserServiceTest {
         mockUser.setPassword(null);
         assertEquals(mockUser, result.getPayload());
         assertNull(result.getPayload().getPassword());
+    }
+
+    @Test
+    void shouldNotUpdateUserInvalidUser() {
+        Result<User> result = service.updateUser(null);
+        assertEquals(ResultType.INVALID, result.getType());
+
+        User user = makeUser();
+        user.setFirstName(" ");
+        result = service.updateUser(user);
+        assertEquals(ResultType.INVALID, result.getType());
+
+        user = makeUser();
+        user.setLastName(null);
+        result = service.updateUser(user);
+        assertEquals(ResultType.INVALID, result.getType());
+
+        user = makeUser();
+        user.setEmail("");
+        result = service.updateUser(user);
+        assertEquals(ResultType.INVALID, result.getType());
+
+        user = makeUser();
+        user.setPassword(null);
+        result = service.updateUser(user);
+        assertEquals(ResultType.INVALID, result.getType());
+
+        user = makeUser();
+        user.setFavoriteTeam(null);
+        result = service.updateUser(user);
+        assertEquals(ResultType.INVALID, result.getType());
+
+        user = makeUser();
+        user.setUserId(0);
+        result = service.updateUser(user);
+        assertEquals(ResultType.INVALID, result.getType());
+    }
+
+    @Test
+    void shouldNotUpdateIdNotFound() {
+        User user = makeUser();
+        user.setUserId(50);
+
+        when(repository.updateUser(user)).thenReturn(false);
+
+        Result<User> result = service.updateUser(user);
+        assertEquals(ResultType.NOT_FOUND, result.getType());
+    }
+
+    @Test
+    void shouldUpdateUser() {
+        User user = makeUser();
+        user.setUserId(1);
+
+        when(repository.updateUser(user)).thenReturn(true);
+
+        Result<User> result = service.updateUser(user);
+        assertEquals(ResultType.SUCCESS, result.getType());
+    }
+
+    @Test
+    void shouldDeleteUser() {
+        User user = makeUser();
+        user.setUserId(1);
+
+        when(repository.deleteUser(user)).thenReturn(true);
+
+        assertTrue(service.deleteUser(user));
+    }
+
+    @Test
+    void shouldNotDeleteUser() {
+        User user = makeUser();
+        user.setUserId(100);
+
+        when(repository.deleteUser(user)).thenReturn(false);
+
+        assertFalse(service.deleteUser(user));
     }
 
     User makeUser() {

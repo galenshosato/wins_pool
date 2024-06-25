@@ -31,7 +31,7 @@ public class UserService {
     }
 
     public Result<User> addUser(User user) {
-        Result<User> result = validateNewUser(user);
+        Result<User> result = validateUser(user);
         if (!result.isSuccess()) {
             return result;
         }
@@ -47,6 +47,30 @@ public class UserService {
         user.setPassword(null);
         result.setPayload(user);
         return result;
+    }
+
+    public Result<User> updateUser(User user) {
+        Result<User> result = validateUser(user);
+
+        if (!result.isSuccess()) {
+            return result;
+        }
+
+        if (user.getUserId() <= 0) {
+            result.addMessage("userId must be set for an `update` operation", ResultType.INVALID);
+            return result;
+        }
+
+        if (!repository.updateUser(user)) {
+            String msg = String.format("User Id: %s was not found", user.getUserId());
+            result.addMessage(msg,ResultType.NOT_FOUND);
+        }
+
+        return result;
+    }
+
+    public boolean deleteUser(User user) {
+        return repository.deleteUser(user);
     }
 
 
@@ -79,7 +103,7 @@ public class UserService {
 
     }
 
-    private Result<User> validateNewUser(User user) {
+    private Result<User> validateUser(User user) {
         Result<User> result = new Result<>();
 
         checkNullUser(user, result);
