@@ -1,19 +1,25 @@
 package gssato.wins_pool.domain;
 
 import gssato.wins_pool.data.UserRepository;
+import gssato.wins_pool.dto.LoginDTO;
+import gssato.wins_pool.dto.UserRequestDTO;
+import gssato.wins_pool.models.Team;
 import gssato.wins_pool.models.User;
 import gssato.wins_pool.util.PasswordUtils;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
 public class UserService {
 
     private final UserRepository repository;
+    private final TeamService teamService;
 
-    public UserService(UserRepository repository) {
+    public UserService(UserRepository repository, TeamService teamService) {
         this.repository = repository;
+        this.teamService = teamService;
     }
 
     public List<User> findAllUsers() {return repository.findAllUsers();}
@@ -26,45 +32,87 @@ public class UserService {
         return user;
     }
 
-    public Result<User> login(User user) {
-        return validateLogin(user);
+    public Result<User> login(LoginDTO loginDTO) {
+        return validateLogin(loginDTO);
     }
 
-    public Result<User> addUser(User user) {
-        Result<User> result = validateUser(user);
+    public Result<User> addUser(UserRequestDTO userRequestDTO) {
+        Result<User> result = validateUserDTO(userRequestDTO);
         if (!result.isSuccess()) {
             return result;
         }
 
-        if (user.getUserId() != 0) {
-            result.addMessage("UserId cannot be set for `add` operation", ResultType.INVALID);
+        if (userRequestDTO.getUserId() != 0) {
+            result.addMessage("User Id cannot be set for an `add` operation", ResultType.INVALID);
             return result;
         }
 
-        String hashedPassword = PasswordUtils.hashPassword(user.getPassword());
+        User user = new User();
+        user.setFirstName(userRequestDTO.getFirstName());
+        user.setLastName(userRequestDTO.getLastName());
+        user.setEmail(userRequestDTO.getEmail());
+
+        Team favoriteTeam = teamService.findTeamById(userRequestDTO.getFavoriteTeamId());
+        user.setFavoriteTeam(favoriteTeam);
+
+        String hashedPassword = PasswordUtils.hashPassword(userRequestDTO.getPassword());
         user.setPassword(hashedPassword);
-        user = repository.addUser(user);
-        user.setPassword(null);
-        result.setPayload(user);
+        User Addeduser = repository.addUser(user);
+        Addeduser.setPassword(null);
+        result.setPayload(Addeduser);
         return result;
     }
 
-    public Result<User> updateUser(User user) {
-        Result<User> result = validateUser(user);
+    public Result<User> updateUser(UserRequestDTO userRequestDTO) {
+        Result<User> result = validateUserDTO(userRequestDTO);
 
         if (!result.isSuccess()) {
             return result;
         }
 
-        if (user.getUserId() <= 0) {
+        if (userRequestDTO.getUserId() <= 0) {
             result.addMessage("userId must be set for an `update` operation", ResultType.INVALID);
             return result;
         }
 
-        if (!repository.updateUser(user)) {
-            String msg = String.format("User Id: %s was not found", user.getUserId());
+        User user = repository.findUserById(userRequestDTO.getUserId());
+        if (user == null) {
+            String msg = String.format("User Id: %s was not found", userRequestDTO.getUserId());
             result.addMessage(msg,ResultType.NOT_FOUND);
+            return result;
         }
+
+        user.setFirstName(userRequestDTO.getFirstName());
+        user.setLastName(userRequestDTO.getLastName());
+        user.setEmail(userRequestDTO.getEmail());
+        String hashedPassword = PasswordUtils.hashPassword(userRequestDTO.getPassword());
+        if (!hashedPassword.equals(user.getPassword())) {
+            user.setPassword(hashedPassword);
+        }
+
+        if (!repository.updateUser(user)) {
+            result.addMessage("There was an error with your update, please try again", ResultType.INVALID);
+        }
+
+        return result;
+    }
+
+    public Result<User> updateUserMoney(int userId, BigDecimal addedMoney) {
+        Result<User> result = new Result<>();
+        User user = repository.findUserById(userId);
+        if (user == null) {
+            String msg = String.format("User Id: %s was not found", userId);
+            result.addMessage(msg,ResultType.NOT_FOUND);
+            return result;
+        }
+
+        BigDecimal newMoneyOwed = user.getMoneyOwed().add(addedMoney);
+        user.setMoneyOwed(newMoneyOwed);
+        if (!repository.updateUser(user)) {
+            result.addMessage("There was an error with your update, please try again", ResultType.INVALID);
+        }
+
+        result.setPayload(user);
 
         return result;
     }
@@ -74,23 +122,22 @@ public class UserService {
     }
 
 
-    private Result<User> validateLogin(User user) {
+    private Result<User> validateLogin(LoginDTO loginDTO) {
         Result<User> result = new Result<>();
 
-        checkNullUser(user, result);
-
-        if (!result.isSuccess()) {
+        if (loginDTO == null) {
+            result.addMessage("Login Credentials cannot be null", ResultType.INVALID);
             return result;
         }
 
-        User checkedUser = repository.findUserByEmail(user.getEmail());
+        User checkedUser = repository.findUserByEmail(loginDTO.getEmail());
 
         if (checkedUser == null) {
             result.addMessage("User not found", ResultType.NOT_FOUND);
             return result;
         }
 
-        boolean verified = PasswordUtils.verifyPassword(user.getPassword(), checkedUser.getPassword());
+        boolean verified = PasswordUtils.verifyPassword(loginDTO.getPassword(), checkedUser.getPassword());
 
         if (!verified) {
             result.addMessage("Invalid password for this user", ResultType.INVALID);
@@ -103,32 +150,31 @@ public class UserService {
 
     }
 
-    private Result<User> validateUser(User user) {
+    private Result<User> validateUserDTO(UserRequestDTO userRequestDTO) {
         Result<User> result = new Result<>();
 
-        checkNullUser(user, result);
-
-        if (!result.isSuccess()) {
+        if (userRequestDTO == null) {
+            result.addMessage("New User cannot be null", ResultType.INVALID);
             return result;
         }
 
-        if (Validations.isNullOrBlank(user.getFirstName())) {
+        if (Validations.isNullOrBlank(userRequestDTO.getFirstName())) {
             result.addMessage("User must have a first name", ResultType.INVALID);
         }
 
-        if (Validations.isNullOrBlank(user.getLastName())) {
+        if (Validations.isNullOrBlank(userRequestDTO.getLastName())) {
             result.addMessage("User must have a last name", ResultType.INVALID);
         }
 
-        if (Validations.isNullOrBlank(user.getEmail())) {
+        if (Validations.isNullOrBlank(userRequestDTO.getEmail())) {
             result.addMessage("User must have an email", ResultType.INVALID);
         }
 
-        if (Validations.isNullOrBlank(user.getPassword())) {
+        if (Validations.isNullOrBlank(userRequestDTO.getPassword())) {
             result.addMessage("User must have a password", ResultType.INVALID);
         }
 
-        if (user.getFavoriteTeam() == null) {
+        if (userRequestDTO.getFavoriteTeamId() == 0) {
             result.addMessage("User must have a favorite team", ResultType.INVALID);
         }
 

@@ -54,6 +54,21 @@ class UserJdbcTemplateRepositoryTest {
     }
 
     @Test
+    void shouldNotFindUserById() {
+        User user = repository.findUserById(100);
+        assertNull(user);
+    }
+
+    @Test
+    void shouldFindUserById() {
+        User user = repository.findUserById(2);
+        assertNotNull(user);
+        assertEquals("Cal", user.getFirstName());
+        assertEquals("Kestis", user.getLastName());
+        assertEquals(2, user.getFavoriteTeam().getTeamId());
+    }
+
+    @Test
     void shouldAddUser() {
         User user = new User();
         Team favTeam = new Team();

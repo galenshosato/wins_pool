@@ -93,4 +93,19 @@ public class User {
     public void setMoneyOwed(BigDecimal moneyOwed) {
         this.moneyOwed = moneyOwed;
     }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "userId=" + userId +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", email='" + email + '\'' +
+                ", password='" + password + '\'' +
+                ", deleted=" + deleted +
+                ", isAdmin=" + isAdmin +
+                ", moneyOwed=" + moneyOwed +
+                ", favoriteTeam=" + favoriteTeam +
+                '}';
+    }
 }

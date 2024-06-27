@@ -11,6 +11,9 @@ public interface UserRepository {
     List<User> findAllCurrentUsers();
 
     @Transactional
+    User findUserById(int userId);
+
+    @Transactional
     User findUserByEmail(String email);
 
     User addUser(User user);

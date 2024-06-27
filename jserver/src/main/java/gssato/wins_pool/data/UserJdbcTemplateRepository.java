@@ -9,6 +9,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.List;
@@ -32,6 +33,18 @@ public class UserJdbcTemplateRepository implements UserRepository {
     public List<User> findAllCurrentUsers() {
         final String sql = "select user_id, first_name, last_name, email, is_deleted, is_admin, money_owed, team_id from user where is_deleted = 0;";
         return jdbcTemplate.query(sql, new UserMapper());
+    }
+
+    @Override
+    @Transactional
+    public User findUserById(int userId) {
+        final String sql = "select user_id, first_name, last_name, email, password, is_deleted, is_admin, money_owed, team_id from user where user_id = ?;";
+        User result = jdbcTemplate.query(sql, new UserMapper(), userId).stream().findFirst().orElse(null);
+
+        if (result != null) {
+            addTeam(result);
+        }
+        return result;
     }
 
     @Override
@@ -70,6 +83,7 @@ public class UserJdbcTemplateRepository implements UserRepository {
         user.setUserId(keyHolder.getKey().intValue());
         return user;
     }
+
 
     @Override
     public boolean updateUser(User user) {

@@ -1,6 +1,6 @@
 package gssato.wins_pool.dto;
 
-public class DraftDTO {
+public class DraftRequestDTO {
 
     private int draftId;
     private String userEmail;

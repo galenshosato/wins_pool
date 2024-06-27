@@ -1,6 +1,9 @@
 package gssato.wins_pool.domain;
 
+import gssato.wins_pool.data.TeamRepository;
 import gssato.wins_pool.data.UserRepository;
+import gssato.wins_pool.dto.LoginDTO;
+import gssato.wins_pool.dto.UserRequestDTO;
 import gssato.wins_pool.models.Team;
 import gssato.wins_pool.models.User;
 import gssato.wins_pool.util.PasswordUtils;
@@ -13,6 +16,7 @@ import java.awt.geom.RectangularShape;
 import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -21,6 +25,9 @@ class UserServiceTest {
 
     @Autowired
     UserService service;
+
+    @MockBean
+    TeamRepository teamRepository;
 
     @MockBean
     UserRepository repository;
@@ -33,9 +40,12 @@ class UserServiceTest {
 
     @Test
     void shouldNotLoginNoUserFound() {
-        User user = makeUser();
+        LoginDTO logIn = new LoginDTO();
 
-        Result<User> result = service.login(user);
+        logIn.setEmail("test@test.com");
+        logIn.setPassword("password");
+
+        Result<User> result = service.login(logIn);
 
         assertEquals(ResultType.NOT_FOUND, result.getType());
     }
@@ -50,8 +60,11 @@ class UserServiceTest {
         mockUser.setPassword(hashedPassword);
 
         when(repository.findUserByEmail(user.getEmail())).thenReturn(mockUser);
-        user.setPassword("wrongPassword");
-        Result<User> result = service.login(user);
+
+        LoginDTO login = new LoginDTO();
+        login.setEmail("test@test.com");
+        login.setPassword("wrong password");
+        Result<User> result = service.login(login);
 
         assertEquals(ResultType.INVALID,result.getType());
     }
@@ -67,7 +80,11 @@ class UserServiceTest {
 
         when(repository.findUserByEmail(user.getEmail())).thenReturn(mockUser);
 
-        Result<User> result = service.login(user);
+        LoginDTO logIn = new LoginDTO();
+        logIn.setEmail("test@test.com");
+        logIn.setPassword("test");
+
+        Result<User> result = service.login(logIn);
         assertEquals(ResultType.SUCCESS,result.getType());
         assertNull(result.getPayload().getPassword());
     }
@@ -80,54 +97,56 @@ class UserServiceTest {
 
     @Test
     void shouldNotAddNoFirstName() {
-        User user = makeUser();
-        user.setFirstName("");
-        Result<User> result = service.addUser(user);
+        UserRequestDTO request = makeRequestDTO();
+        request.setFirstName("");
+        Result<User> result = service.addUser(request);
         assertEquals(ResultType.INVALID, result.getType());
     }
 
     @Test
     void shouldNotAddNoLastName() {
-        User user = makeUser();
-        user.setLastName(null);
-        Result<User> result = service.addUser(user);
+        UserRequestDTO request = makeRequestDTO();
+        request.setLastName(null);
+        Result<User> result = service.addUser(request);
         assertEquals(ResultType.INVALID, result.getType());
     }
 
     @Test
     void shouldNotAddNoEmail() {
-        User user = makeUser();
-        user.setEmail(null);
-        Result<User> result = service.addUser(user);
+        UserRequestDTO request = makeRequestDTO();
+        request.setEmail(null);
+        Result<User> result = service.addUser(request);
         assertEquals(ResultType.INVALID, result.getType());
     }
 
     @Test
     void shouldNotAddNoPassword() {
-        User user = makeUser();
-        user.setPassword(null);
-        Result<User> result = service.addUser(user);
+        UserRequestDTO request = makeRequestDTO();
+        request.setPassword(null);
+        Result<User> result = service.addUser(request);
         assertEquals(ResultType.INVALID, result.getType());
     }
 
     @Test
     void shouldNotAddNoFavoriteTeam() {
-        User user = makeUser();
-        user.setFavoriteTeam(null);
-        Result<User> result = service.addUser(user);
+        UserRequestDTO request = makeRequestDTO();
+        request.setFavoriteTeamId(0);
+        Result<User> result = service.addUser(request);
         assertEquals(ResultType.INVALID, result.getType());
     }
 
     @Test
     void shouldAddNewUser() {
-        User user = makeUser();
         User mockUser = makeUser();
-        String hashedPassword = PasswordUtils.hashPassword(user.getPassword());
+        UserRequestDTO request = makeRequestDTO();
+        String hashedPassword = PasswordUtils.hashPassword(request.getPassword());
         mockUser.setUserId(1);
         mockUser.setPassword(hashedPassword);
 
-        when(repository.addUser(user)).thenReturn(mockUser);
-        Result<User> result = service.addUser(user);
+
+        when(repository.addUser(any(User.class))).thenReturn(mockUser);
+
+        Result<User> result = service.addUser(request);
         assertEquals(ResultType.SUCCESS, result.getType());
         mockUser.setPassword(null);
         assertEquals(mockUser, result.getPayload());
@@ -139,34 +158,34 @@ class UserServiceTest {
         Result<User> result = service.updateUser(null);
         assertEquals(ResultType.INVALID, result.getType());
 
-        User user = makeUser();
-        user.setFirstName(" ");
-        result = service.updateUser(user);
+        UserRequestDTO request = makeRequestDTO();
+        request.setFirstName(" ");
+        result = service.updateUser(request);
         assertEquals(ResultType.INVALID, result.getType());
 
-        user = makeUser();
-        user.setLastName(null);
-        result = service.updateUser(user);
+        request = makeRequestDTO();
+        request.setLastName(null);
+        result = service.updateUser(request);
         assertEquals(ResultType.INVALID, result.getType());
 
-        user = makeUser();
-        user.setEmail("");
-        result = service.updateUser(user);
+        request = makeRequestDTO();
+        request.setEmail("");
+        result = service.updateUser(request);
         assertEquals(ResultType.INVALID, result.getType());
 
-        user = makeUser();
-        user.setPassword(null);
-        result = service.updateUser(user);
+        request = makeRequestDTO();
+        request.setPassword(null);
+        result = service.updateUser(request);
         assertEquals(ResultType.INVALID, result.getType());
 
-        user = makeUser();
-        user.setFavoriteTeam(null);
-        result = service.updateUser(user);
+        request = makeRequestDTO();
+        request.setFavoriteTeamId(0);
+        result = service.updateUser(request);
         assertEquals(ResultType.INVALID, result.getType());
 
-        user = makeUser();
-        user.setUserId(0);
-        result = service.updateUser(user);
+        request = makeRequestDTO();
+        request.setUserId(0);
+        result = service.updateUser(request);
         assertEquals(ResultType.INVALID, result.getType());
     }
 
@@ -175,9 +194,12 @@ class UserServiceTest {
         User user = makeUser();
         user.setUserId(50);
 
+        UserRequestDTO request = makeRequestDTO();
+        request.setUserId(50);
+
         when(repository.updateUser(user)).thenReturn(false);
 
-        Result<User> result = service.updateUser(user);
+        Result<User> result = service.updateUser(request);
         assertEquals(ResultType.NOT_FOUND, result.getType());
     }
 
@@ -185,11 +207,58 @@ class UserServiceTest {
     void shouldUpdateUser() {
         User user = makeUser();
         user.setUserId(1);
+        User mockUser = makeUser();
+        mockUser.setUserId(1);
+        when(repository.findUserById(1)).thenReturn(mockUser);
 
-        when(repository.updateUser(user)).thenReturn(true);
+        UserRequestDTO request = makeRequestDTO();
+        request.setUserId(1);
 
-        Result<User> result = service.updateUser(user);
+        when(repository.updateUser(mockUser)).thenReturn(true);
+
+        Result<User> result = service.updateUser(request);
         assertEquals(ResultType.SUCCESS, result.getType());
+    }
+
+    @Test
+    void shouldNotUpdateMoneyIdNotFound() {
+        Result<User> result = service.updateUserMoney(50, BigDecimal.valueOf(5.00));
+        assertEquals(ResultType.NOT_FOUND, result.getType());
+    }
+
+    @Test
+    void shouldNotUpdateWhenUpdateFails() {
+        int userId = 1;
+        BigDecimal addedMoney = BigDecimal.valueOf(100);
+        User user = new User();
+        user.setUserId(userId);
+        user.setMoneyOwed(BigDecimal.valueOf(200));
+
+        when(repository.findUserById(userId)).thenReturn(user);
+        when(repository.updateUser(any(User.class))).thenReturn(false);
+
+        Result<User> result = service.updateUserMoney(userId, addedMoney);
+
+        assertEquals(ResultType.INVALID, result.getType());
+
+    }
+
+    @Test
+    void shouldReturnSuccessWhenUpdateSucceeds() {
+        int userId = 1;
+        BigDecimal addedMoney = BigDecimal.valueOf(100);
+        User user = new User();
+        user.setUserId(userId);
+        user.setMoneyOwed(BigDecimal.valueOf(200));
+
+        when(repository.findUserById(userId)).thenReturn(user);
+        when(repository.updateUser(any(User.class))).thenReturn(true);
+
+        Result<User> result = service.updateUserMoney(userId, addedMoney);
+
+        assertEquals(ResultType.SUCCESS, result.getType());
+        assertNotNull(result.getPayload());
+        assertEquals(BigDecimal.valueOf(300), result.getPayload().getMoneyOwed());
     }
 
     @Test
@@ -223,13 +292,24 @@ class UserServiceTest {
         user.setMoneyOwed(BigDecimal.ZERO);
 
         Team team = new Team();
+        team.setTeamId(2);
         team.setLocation("New England");
         team.setTeamName("Patriots");
-        team.setColor("Red");
-        team.setAltColor("White");
+        team.setColor("blue");
+        team.setAltColor("white");
         user.setFavoriteTeam(team);
 
         return user;
+    }
+
+    UserRequestDTO makeRequestDTO() {
+        UserRequestDTO request = new UserRequestDTO();
+        request.setFirstName("Testy");
+        request.setLastName("McTesterson");
+        request.setEmail("test@test.com");
+        request.setPassword("test");
+        request.setFavoriteTeamId(2);
+        return request;
     }
 
 }

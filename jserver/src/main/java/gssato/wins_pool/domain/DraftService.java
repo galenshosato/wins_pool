@@ -1,7 +1,7 @@
 package gssato.wins_pool.domain;
 
 import gssato.wins_pool.data.DraftRepository;
-import gssato.wins_pool.dto.DraftDTO;
+import gssato.wins_pool.dto.DraftRequestDTO;
 import gssato.wins_pool.models.Draft;
 import gssato.wins_pool.models.DraftPick;
 import gssato.wins_pool.models.User;
@@ -38,27 +38,27 @@ public class DraftService {
         return repository.findAllDraftPicksByUserAndYear(year, userId);
     }
 
-    public Result<Draft> createDraftSelection(DraftDTO draftDto) {
-        Result<Draft> result = validate(draftDto);
+    public Result<Draft> createDraftSelection(DraftRequestDTO draftRequestDto) {
+        Result<Draft> result = validate(draftRequestDto);
 
         if (!result.isSuccess()) {
             return result;
         }
 
-        if (draftDto.getDraftId() != 0) {
+        if (draftRequestDto.getDraftId() != 0) {
             result.addMessage("Draft Object must not have an ID for a `create` operation", ResultType.INVALID);
             return result;
         }
 
-        if (draftDto.getTeamId() != 0) {
+        if (draftRequestDto.getTeamId() != 0) {
             result.addMessage("Draft Object cannot have a team associated with it upon creation", ResultType.INVALID);
             return result;
         }
 
         Draft draft = new Draft();
-        User user = userService.findUserByEmail(draftDto.getUserEmail());
-        Year year = yearService.findByYear(draftDto.getYear());
-        DraftPick pickNumber = draftPickService.findDraftPickByNumber(draftDto.getPickNumber());
+        User user = userService.findUserByEmail(draftRequestDto.getUserEmail());
+        Year year = yearService.findByYear(draftRequestDto.getYear());
+        DraftPick pickNumber = draftPickService.findDraftPickByNumber(draftRequestDto.getPickNumber());
         draft.setUser(user);
         draft.setYear(year);
         draft.setDraftPick(pickNumber);
@@ -68,27 +68,29 @@ public class DraftService {
         return result;
     }
 
-    //TODO: Do I need to pass draft objects back or can it just be a boolean? And if so, I need to go back and edit the repository as well
+
 
     //TODO: Create Update/Add Team method
 
-    private Result<Draft> validate (DraftDTO draftDto) {
+
+
+    private Result<Draft> validate (DraftRequestDTO draftRequestDto) {
         Result<Draft> result = new Result<>();
 
-        if (draftDto == null) {
+        if (draftRequestDto == null) {
             result.addMessage("Draft Object cannot be null", ResultType.INVALID);
             return result;
         }
 
-        if (Validations.isNullOrBlank(draftDto.getUserEmail())) {
+        if (Validations.isNullOrBlank(draftRequestDto.getUserEmail())) {
             result.addMessage("A User must be assigned to a Draft Pick", ResultType.INVALID);
         }
 
-        if (draftDto.getYear() < 2020) {
+        if (draftRequestDto.getYear() < 2020) {
             result.addMessage("Please enter a valid year", ResultType.INVALID);
         }
 
-        if (draftDto.getPickNumber() == 0) {
+        if (draftRequestDto.getPickNumber() == 0) {
             result.addMessage("A Draft Pick Number must be assigned to a Draft Pick", ResultType.INVALID);
         }
 

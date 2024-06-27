@@ -61,4 +61,16 @@ public class Team {
     public void setLeague(String league) {
         this.league = league;
     }
+
+    @Override
+    public String toString() {
+        return "Team{" +
+                "teamId=" + teamId +
+                ", location='" + location + '\'' +
+                ", teamName='" + teamName + '\'' +
+                ", color='" + color + '\'' +
+                ", altColor='" + altColor + '\'' +
+                ", league='" + league + '\'' +
+                '}';
+    }
 }
