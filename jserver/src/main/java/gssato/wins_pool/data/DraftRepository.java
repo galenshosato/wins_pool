@@ -9,6 +9,8 @@ public interface DraftRepository {
 
     List<Draft> findAllDraftPicksByUserAndYear(int year, int userId);
 
+    Draft findDraftObjectById(int draftId);
+
     Draft createDraftPick(Draft draftPick);
 
     boolean updateDraftPickWithTeam(Draft draftPick);

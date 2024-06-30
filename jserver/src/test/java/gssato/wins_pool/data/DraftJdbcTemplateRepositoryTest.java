@@ -63,6 +63,21 @@ class DraftJdbcTemplateRepositoryTest {
     }
 
     @Test
+    void shouldNotFindDraftObject() {
+        Draft draftObject = repository.findDraftObjectById(10);
+        assertNull(draftObject);
+    }
+
+    @Test
+    void shouldFindDraftObjectById() {
+        Draft draftObject = repository.findDraftObjectById(4);
+        assertNotNull(draftObject);
+        assertEquals("Luke", draftObject.getUser().getFirstName());
+        assertEquals(2024, draftObject.getYear().getYearNumber());
+        assertEquals("49ers", draftObject.getTeam().getTeamName());
+    }
+
+    @Test
     void shouldCreateNewDraft() {
         User user = new User();
         user.setUserId(3);

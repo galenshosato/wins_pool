@@ -44,6 +44,18 @@ public class DraftJdbcTemplateRepository implements DraftRepository {
         return jdbcTemplate.query(sql, new DraftMapper(), year, userId);
     }
 
+    @Override
+    public Draft findDraftObjectById(int draftId) {
+        final String sql = "select * "
+                + "from draft d "
+                + "join user u on d.user_id = u.user_id "
+                + "join year y on d.year_id = y.year_id "
+                + "join draft_pick dp on d.draft_pick_id = dp.draft_pick_id "
+                + "left join team t on d.team_id = t.team_id "
+                + "where d.draft_id = ?;";
+        return jdbcTemplate.query(sql, new DraftMapper(), draftId).stream().findFirst().orElse(null);
+    }
+
 
     @Override
     public Draft createDraftPick(Draft draftPick) {

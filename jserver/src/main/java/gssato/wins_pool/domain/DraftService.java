@@ -2,10 +2,7 @@ package gssato.wins_pool.domain;
 
 import gssato.wins_pool.data.DraftRepository;
 import gssato.wins_pool.dto.DraftRequestDTO;
-import gssato.wins_pool.models.Draft;
-import gssato.wins_pool.models.DraftPick;
-import gssato.wins_pool.models.User;
-import gssato.wins_pool.models.Year;
+import gssato.wins_pool.models.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -68,9 +65,39 @@ public class DraftService {
         return result;
     }
 
+    public Result<Draft> updateDraftWithTeam(int draftId, int teamId) {
+        Result<Draft> result = new Result<>();
+
+        Draft draft = repository.findDraftObjectById(draftId);
+        if (draft == null) {
+            result.addMessage("Draft Object was not found, make sure Id is correct", ResultType.NOT_FOUND);
+            return result;
+        }
+        if (draft.getTeam()!= null) {
+            result.addMessage("This draft object already has a team drafted", ResultType.INVALID);
+            return result;
+        }
+
+        Team team = teamService.findTeamById(teamId);
+        if (team == null) {
+            result.addMessage("Invalid Team Id", ResultType.INVALID);
+            return result;
+        }
+
+        draft.setTeam(team);
+        if (!repository.updateDraftPickWithTeam(draft)) {
+            result.addMessage("Draft Object was not updated successfully, please try again", ResultType.INVALID);
+        }
+
+        return result;
+
+    }
+
+    //TODO Add a draftRepository method that allows me to search for draft objects by id
 
 
-    //TODO: Create Update/Add Team method
+
+
 
 
 
@@ -90,7 +117,7 @@ public class DraftService {
             result.addMessage("Please enter a valid year", ResultType.INVALID);
         }
 
-        if (draftRequestDto.getPickNumber() == 0) {
+        if (draftRequestDto.getPickNumber() <= 0) {
             result.addMessage("A Draft Pick Number must be assigned to a Draft Pick", ResultType.INVALID);
         }
 

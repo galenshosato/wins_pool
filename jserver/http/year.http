@@ -1,0 +1,10 @@
+@url = http://localhost:8080/api/year
+
+GET {{url}} HTTP/1.1
+
+###
+
+GET {{url}}/2023 HTTP/1.1
+
+
+
