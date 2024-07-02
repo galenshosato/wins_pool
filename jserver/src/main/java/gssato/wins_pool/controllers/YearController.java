@@ -1,5 +1,6 @@
 package gssato.wins_pool.controllers;
 
+import gssato.wins_pool.domain.Result;
 import gssato.wins_pool.domain.YearService;
 import gssato.wins_pool.models.Year;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,15 @@ public class YearController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok(year);
+    }
+
+    @PostMapping
+    public ResponseEntity<Object> addYear(@RequestBody Year year) {
+        Result<Year> result = yearService.addYear(year);
+        if (result.isSuccess()) {
+            return new ResponseEntity<>(result.getPayload(), HttpStatus.CREATED);
+        }
+        return ErrorResponse.build(result);
     }
 
 
