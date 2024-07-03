@@ -28,6 +28,9 @@ public class UserService {
 
     public User findUserByEmail(String email) {
         User user = repository.findUserByEmail(email);
+        if (user == null) {
+            return null;
+        }
         user.setPassword(null);
         return user;
     }

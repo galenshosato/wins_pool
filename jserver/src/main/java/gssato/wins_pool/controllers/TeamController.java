@@ -12,13 +12,13 @@ import java.util.List;
 
 @RestController
 @CrossOrigin(origins = {"http://localhost:3000"})
-@RequestMapping("/api/team")
+@RequestMapping("/api/teams")
 public class TeamController {
 
     @Autowired
     TeamService service;
 
-    @GetMapping("/all")
+    @GetMapping
     public List<Team> findAllTeams() {
         return service.findAllTeams();
     }
