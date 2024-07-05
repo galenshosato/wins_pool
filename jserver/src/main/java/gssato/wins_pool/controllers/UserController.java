@@ -3,8 +3,10 @@ package gssato.wins_pool.controllers;
 import gssato.wins_pool.domain.Result;
 import gssato.wins_pool.domain.UserService;
 import gssato.wins_pool.dto.LoginDTO;
+import gssato.wins_pool.dto.LoginResponseDTO;
 import gssato.wins_pool.dto.UserRequestDTO;
 import gssato.wins_pool.models.User;
+import gssato.wins_pool.util.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,9 @@ public class UserController {
 
     @Autowired
     UserService service;
+
+    @Autowired
+    JwtTokenProvider jwtTokenProvider;
 
     @GetMapping("/all")
     public List<User> findAllUsers() {return service.findAllUsers();}
@@ -42,9 +47,22 @@ public class UserController {
         Result<User> result = service.login(loginDTO);
 
         if (result.isSuccess()) {
-            return new ResponseEntity<>(result.getPayload(), HttpStatus.OK);
+            String token = jwtTokenProvider.createToken(loginDTO.getEmail());
+            User user = result.getPayload();
+            LoginResponseDTO loginResponse = new LoginResponseDTO(token, user);
+            return new ResponseEntity<>(loginResponse, HttpStatus.OK);
         }
 
+        return ErrorResponse.build(result);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Object> logout(@RequestHeader("Authorization") String token) {
+        String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+        Result<Void> result = service.logout(actualToken);
+        if (result.isSuccess()) {
+            return new ResponseEntity<>(HttpStatus.OK);
+        }
         return ErrorResponse.build(result);
     }
 
@@ -91,6 +109,8 @@ public class UserController {
 
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
+
+    //TODO Add Authentication and Login and Logout Procedures
 
 
 }

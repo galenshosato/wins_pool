@@ -6,10 +6,13 @@ import gssato.wins_pool.dto.UserRequestDTO;
 import gssato.wins_pool.models.Team;
 import gssato.wins_pool.models.User;
 import gssato.wins_pool.util.PasswordUtils;
+import gssato.wins_pool.util.security.JwtTokenProvider;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class UserService {
@@ -17,9 +20,13 @@ public class UserService {
     private final UserRepository repository;
     private final TeamService teamService;
 
-    public UserService(UserRepository repository, TeamService teamService) {
+    private final JwtTokenProvider jwtTokenProvider;
+    private Set<String> tokenBlackList = new HashSet<>();
+
+    public UserService(UserRepository repository, TeamService teamService, JwtTokenProvider jwtTokenProvider) {
         this.repository = repository;
         this.teamService = teamService;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     public List<User> findAllUsers() {return repository.findAllUsers();}
@@ -37,6 +44,20 @@ public class UserService {
 
     public Result<User> login(LoginDTO loginDTO) {
         return validateLogin(loginDTO);
+    }
+
+    public Result<Void> logout(String token) {
+        Result<Void> result = new Result<>();
+        if (jwtTokenProvider.validateToken(token)) {
+            tokenBlackList.add(token);
+            return result;
+        }
+        result.addMessage("Invalid Token", ResultType.INVALID);
+        return result;
+    }
+
+    public boolean isTokenBlacklisted(String token) {
+        return tokenBlackList.contains(token);
     }
 
     public Result<User> addUser(UserRequestDTO userRequestDTO) {
