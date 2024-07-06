@@ -93,12 +93,6 @@ public class DraftService {
 
     }
 
-    //TODO Add a draftRepository method that allows me to search for draft objects by id
-
-
-
-
-
 
 
     private Result<Draft> validate (DraftRequestDTO draftRequestDto) {
